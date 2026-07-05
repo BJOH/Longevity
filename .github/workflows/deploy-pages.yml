@@ -1,6 +1,6 @@
-# Publicerar sajten genom att spegla main till gh-pages-branchen,
-# som GitHub Pages serverar (klassisk branch-deploy — kräver ingen
-# Pages-API-behörighet för GITHUB_TOKEN).
+# Publicerar sajten till GitHub Pages vid varje push till main.
+# (Pages-sajten skapades initialt via en gh-pages-branch; nu när den finns
+# kan GITHUB_TOKEN deploya direkt från main via Pages-artefakter.)
 name: Deploy to GitHub Pages
 
 on:
@@ -9,7 +9,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: pages
@@ -18,7 +20,14 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Spegla main till gh-pages
-        run: git push --force origin HEAD:gh-pages
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
