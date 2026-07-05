@@ -16,6 +16,11 @@ export const DEFAULT_GOALS = {
 
 let state = load();
 
+/* Synk-krokar: sätts av sync.js så att lokala ändringar skrivs till molnet.
+   Import/molnhämtning går via mergeImported/applyCloudGoals och triggar inte. */
+let syncHandler = null;
+export function setSyncHandler(handler) { syncHandler = handler; }
+
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -50,6 +55,13 @@ export function getGoals() {
 export function setGoals(patch) {
   state.goals = { ...state.goals, ...patch };
   persist();
+  if (syncHandler) syncHandler.goals();
+}
+
+/* Mål hämtade från molnet — sparas lokalt utan att trigga ny uppladdning. */
+export function applyCloudGoals(goals) {
+  state.goals = { ...state.goals, ...goals };
+  persist();
 }
 
 export function getEntry(dateKey) {
@@ -69,6 +81,7 @@ export function updateEntry(dateKey, patch) {
   if (Object.keys(next).length === 0) delete state.entries[dateKey];
   else state.entries[dateKey] = next;
   persist();
+  if (syncHandler) syncHandler.entry(dateKey);
   return getEntry(dateKey);
 }
 
