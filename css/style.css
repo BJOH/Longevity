@@ -1,0 +1,356 @@
+/* Longevity — mobilanpassad hälsotracker.
+   Färgroller från den validerade referenspaletten; mörkt läge är egna steg,
+   inte en automatisk invertering. */
+
+:root {
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --good: #006300;
+  --danger: #d03b3b;
+
+  /* Serier: färgen följer mätvärdet, aldrig positionen */
+  --c-weight: #2a78d6;   /* blå */
+  --c-fasting: #1baf7a;  /* aqua */
+  --c-exercise: #008300; /* grön */
+  --c-sleep: #4a3aa7;    /* violett */
+  --c-steps: #eb6834;    /* orange */
+  --accent: #2a78d6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --good: #0ca30c;
+    --danger: #e66767;
+
+    --c-weight: #3987e5;
+    --c-fasting: #199e70;
+    --c-exercise: #008300;
+    --c-sleep: #9085e9;
+    --c-steps: #d95926;
+    --accent: #3987e5;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --baseline: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --good: #0ca30c;
+  --danger: #e66767;
+
+  --c-weight: #3987e5;
+  --c-fasting: #199e70;
+  --c-exercise: #008300;
+  --c-sleep: #9085e9;
+  --c-steps: #d95926;
+  --accent: #3987e5;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--page);
+  color: var(--ink);
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: max(12px, env(safe-area-inset-top)) 16px 4px;
+}
+.app-header h1 { font-size: 20px; margin: 0; letter-spacing: 0.02em; }
+.app-header span { color: var(--muted); font-size: 13px; }
+
+main { padding: 0 12px; max-width: 720px; margin: 0 auto; }
+
+h2 { font-size: 15px; margin: 20px 4px 8px; color: var(--ink-2); font-weight: 600; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.hint { color: var(--muted); font-size: 13px; margin: 6px 2px; }
+.hint a { color: var(--accent); }
+
+/* ---------- Progressring ---------- */
+.progress-card {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  gap: 4px 14px;
+  margin-top: 10px;
+}
+.progress-ring { width: 96px; height: 96px; grid-row: span 2; }
+.progress-track { fill: none; stroke: var(--grid); stroke-width: 10; }
+.progress-fill {
+  fill: none;
+  stroke: var(--good);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.4s ease;
+}
+.progress-text strong { font-size: 30px; font-weight: 600; }
+.progress-text span { color: var(--muted); font-size: 14px; margin-left: 6px; }
+.streak { margin: 0; color: var(--ink-2); font-size: 14px; align-self: start; }
+
+/* ---------- Checklista ---------- */
+.goal-list { list-style: none; margin: 0; padding: 0; }
+.goal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
+.goal-mark {
+  width: 26px; height: 26px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--baseline);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+.goal.is-done .goal-mark { background: var(--good); border-color: var(--good); }
+.goal-body { display: flex; flex-direction: column; min-width: 0; }
+.goal-body strong { font-size: 15px; font-weight: 600; }
+.goal-detail { color: var(--muted); font-size: 13px; }
+.goal.is-done .goal-detail { color: var(--good); }
+
+/* ---------- Formulär ---------- */
+.form-card label {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-bottom: 10px;
+}
+.form-card input, .form-card select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  font-size: 16px; /* hindrar iOS-zoom vid fokus */
+  color: var(--ink);
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.form-card input:focus, .form-card select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.check-row {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px !important;
+  color: var(--ink) !important;
+  padding: 6px 0;
+}
+.check-row input { width: 22px !important; height: 22px; margin: 0 !important; accent-color: var(--good); }
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btn-danger { background: var(--danger); }
+.file-label { font-weight: 600; }
+.file-label input { padding: 8px !important; font-size: 14px !important; }
+
+/* ---------- Tidsfilter ---------- */
+.range-row {
+  display: flex;
+  gap: 6px;
+  margin: 12px 2px 12px;
+}
+.range-row button {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.range-row button.is-active {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---------- Diagram ---------- */
+.chart-card { padding-bottom: 8px; }
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.card-head h2 { margin: 0; font-size: 15px; color: var(--ink); }
+.card-value { font-size: 15px; font-weight: 600; color: var(--ink-2); }
+
+.chart-wrap { position: relative; }
+.chart-svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.chart-empty { color: var(--muted); font-size: 13px; padding: 24px 4px; margin: 0; }
+
+.chart-grid { stroke: var(--grid); stroke-width: 1; }
+.chart-baseline { stroke: var(--baseline); stroke-width: 1; }
+.chart-tick {
+  fill: var(--muted);
+  font-size: 11px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.chart-goal { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 5 4; }
+.chart-goal-label { fill: var(--muted); font-size: 10px; font-family: inherit; }
+.chart-end-label {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+}
+.chart-surface-ring { fill: var(--surface); }
+.chart-crosshair { stroke: var(--baseline); stroke-width: 1; }
+.chart-bar.is-hover { opacity: 0.75; }
+.chart-hover-dot { pointer-events: none; }
+
+.chart-tooltip {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+  pointer-events: none;
+  white-space: nowrap;
+  text-align: center;
+}
+.chart-tooltip strong { color: var(--ink); font-size: 13px; }
+
+/* ---------- Historik ---------- */
+.table-scroll { overflow-x: auto; }
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.history-table th, .history-table td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--grid);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.history-table th:first-child, .history-table td:first-child { text-align: left; }
+.history-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  background: var(--surface);
+}
+.history-table td { color: var(--ink); }
+
+/* ---------- Flikrad ---------- */
+.tabbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+.tabbar button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.tabbar button span { font-size: 20px; line-height: 1; }
+.tabbar button.is-active { color: var(--accent); }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(8px);
+  background: var(--ink);
+  color: var(--page);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  max-width: 90vw;
+  text-align: center;
+  z-index: 20;
+}
+.toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.is-error { background: var(--danger); color: #fff; }
+
+@media (min-width: 720px) {
+  .app-header { max-width: 720px; margin: 0 auto; }
+}
