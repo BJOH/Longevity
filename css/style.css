@@ -197,6 +197,11 @@ h2 { font-size: 15px; margin: 20px 4px 8px; color: var(--ink-2); font-weight: 60
   cursor: pointer;
 }
 .btn-danger { background: var(--danger); }
+.btn-secondary {
+  background: var(--page);
+  color: var(--ink);
+  border: 1px solid var(--border);
+}
 .file-label { font-weight: 600; }
 .file-label input { padding: 8px !important; font-size: 14px !important; }
 
@@ -275,6 +280,53 @@ h2 { font-size: 15px; margin: 20px 4px 8px; color: var(--ink-2); font-weight: 60
   text-align: center;
 }
 .chart-tooltip strong { color: var(--ink); font-size: 13px; }
+
+/* ---------- Måltider ---------- */
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 2px;
+}
+.week-nav strong { font-size: 15px; }
+.week-btn {
+  width: 40px; height: 40px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.meal-day.is-today { border-color: var(--accent); border-width: 2px; }
+.meal-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.meal-day-head span { color: var(--muted); font-size: 13px; }
+.meal-row {
+  display: grid;
+  grid-template-columns: 86px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.meal-type { font-size: 13px; color: var(--ink-2); }
+.meal-row input {
+  padding: 8px 10px;
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+.meal-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.meal-by { font-size: 11px; color: var(--muted); max-width: 64px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- Historik ---------- */
 .table-scroll { overflow-x: auto; }

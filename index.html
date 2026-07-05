@@ -113,6 +113,20 @@
     </div>
   </section>
 
+  <!-- ===== MÅLTIDER ===== -->
+  <section class="view" data-view="meals" hidden>
+    <div class="week-nav">
+      <button id="week-prev" class="week-btn" aria-label="Föregående vecka">‹</button>
+      <strong id="week-label"></strong>
+      <button id="week-next" class="week-btn" aria-label="Nästa vecka">›</button>
+    </div>
+    <p id="meals-login-hint" class="hint" hidden>
+      Måltidsplanen delas mellan era konton — logga in under <strong>Mer</strong>
+      för att använda den.</p>
+    <p id="meals-status" class="hint" role="status"></p>
+    <div id="meals-week"></div>
+  </section>
+
   <!-- ===== HISTORIK ===== -->
   <section class="view" data-view="history" hidden>
     <h2>Historik</h2>
@@ -132,6 +146,33 @@
 
   <!-- ===== MER / INSTÄLLNINGAR ===== -->
   <section class="view" data-view="settings" hidden>
+    <h2>Konto & synk</h2>
+    <div class="card form-card" id="account-card">
+      <div id="account-logged-out">
+        <p class="hint">Skapa ett konto för att synka din data mellan enheter
+          och dela måltidsplanen med din partner. Max två konton kan
+          registreras (ni två).</p>
+        <label>Namn (vid nytt konto)
+          <input id="acc-name" type="text" autocomplete="name" placeholder="Björn">
+        </label>
+        <label>E-post
+          <input id="acc-email" type="email" autocomplete="email" inputmode="email">
+        </label>
+        <label>Lösenord
+          <input id="acc-password" type="password" autocomplete="current-password" minlength="8">
+        </label>
+        <div class="row">
+          <button id="btn-signin" class="btn">Logga in</button>
+          <button id="btn-signup" class="btn btn-secondary">Skapa konto</button>
+        </div>
+      </div>
+      <div id="account-logged-in" hidden>
+        <p><strong id="acc-who"></strong></p>
+        <p class="hint" id="sync-status">Synk: –</p>
+        <button id="btn-signout" class="btn btn-secondary">Logga ut</button>
+      </div>
+    </div>
+
     <h2>Mål</h2>
     <div class="card form-card">
       <div class="row">
@@ -195,6 +236,7 @@
 <nav class="tabbar">
   <button data-view="today" class="is-active"><span>☀️</span>Idag</button>
   <button data-view="trends"><span>📈</span>Trender</button>
+  <button data-view="meals"><span>🍽️</span>Måltider</button>
   <button data-view="history"><span>📋</span>Historik</button>
   <button data-view="settings"><span>⚙️</span>Mer</button>
 </nav>

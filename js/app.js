@@ -1,4 +1,6 @@
 import * as store from './store.js';
+import * as cloud from './cloud.js';
+import * as sync from './sync.js';
 import { renderChart } from './charts.js';
 import { parseAppleHealthXML, parseHealthAutoExport, parseLogURL } from './import.js';
 
@@ -21,6 +23,7 @@ function show(view) {
   $$('.tabbar button').forEach(b => b.classList.toggle('is-active', b.dataset.view === view));
   if (view === 'today') renderToday();
   if (view === 'trends') renderTrends();
+  if (view === 'meals') renderMeals();
   if (view === 'history') renderHistory();
   if (view === 'settings') renderSettings();
   window.scrollTo(0, 0);
@@ -136,6 +139,120 @@ function renderTrends() {
   }
 }
 
+/* ---------- Måltider (delad veckoplan) ---------- */
+const MEAL_TYPES = [
+  { key: 'frukost', label: 'Frukost', icon: '🌅' },
+  { key: 'lunch', label: 'Lunch', icon: '🥪' },
+  { key: 'middag', label: 'Middag', icon: '🍲' },
+];
+const DAY_NAMES = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
+
+let weekStart = mondayOf(new Date());
+
+function mondayOf(d) {
+  const out = new Date(d);
+  out.setHours(12, 0, 0, 0);
+  out.setDate(out.getDate() - ((out.getDay() + 6) % 7));
+  return out;
+}
+
+function isoWeek(d) {
+  const t = new Date(d);
+  t.setHours(12, 0, 0, 0);
+  t.setDate(t.getDate() + 3 - ((t.getDay() + 6) % 7)); // torsdag i samma vecka
+  const jan4 = new Date(t.getFullYear(), 0, 4, 12);
+  return 1 + Math.round((t - mondayOf(jan4)) / (7 * 86400000));
+}
+
+async function renderMeals() {
+  const loggedIn = cloud.cloudAvailable() && cloud.currentUser();
+  $('#meals-login-hint').hidden = !!loggedIn;
+  const container = $('#meals-week');
+  const status = $('#meals-status');
+  container.textContent = '';
+  status.textContent = '';
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    days.push(d);
+  }
+  const fmtShort = d => d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  $('#week-label').textContent =
+    `Vecka ${isoWeek(weekStart)} · ${fmtShort(days[0])} – ${fmtShort(days[6])}`;
+  if (!loggedIn) return;
+
+  status.textContent = 'Hämtar …';
+  let meals = [], profiles = [];
+  try {
+    [meals, profiles] = await Promise.all([
+      cloud.listMeals(store.todayKey(days[0]), store.todayKey(days[6])),
+      cloud.listProfiles(),
+    ]);
+    status.textContent = '';
+  } catch (err) {
+    status.textContent = 'Kunde inte hämta måltidsplanen — kontrollera nätet.';
+    return;
+  }
+  const nameOf = id => profiles.find(p => p.id === id)?.display_name || '';
+  const mealAt = (dateKey, type) =>
+    meals.find(m => m.date === dateKey && m.meal_type === type);
+
+  const todayK = store.todayKey();
+  for (const d of days) {
+    const dateKey = store.todayKey(d);
+    const card = document.createElement('div');
+    card.className = 'card meal-day' + (dateKey === todayK ? ' is-today' : '');
+    const head = document.createElement('div');
+    head.className = 'meal-day-head';
+    const name = document.createElement('strong');
+    name.textContent = DAY_NAMES[(d.getDay() + 6) % 7];
+    const date = document.createElement('span');
+    date.textContent = fmtShort(d);
+    head.append(name, date);
+    card.appendChild(head);
+
+    for (const mt of MEAL_TYPES) {
+      const meal = mealAt(dateKey, mt.key);
+      const row = document.createElement('label');
+      row.className = 'meal-row';
+      const lbl = document.createElement('span');
+      lbl.className = 'meal-type';
+      lbl.textContent = `${mt.icon} ${mt.label}`;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = '–';
+      input.value = meal?.title || '';
+      input.addEventListener('change', async () => {
+        const title = input.value.trim();
+        try {
+          if (title) await cloud.upsertMeal(dateKey, mt.key, title);
+          else if (meal) await cloud.deleteMeal(dateKey, mt.key);
+          toast('Måltidsplan sparad ✓');
+        } catch { toast('Kunde inte spara — kontrollera nätet.', true); }
+      });
+      const by = document.createElement('span');
+      by.className = 'meal-by';
+      by.textContent = meal?.created_by ? nameOf(meal.created_by) : '';
+      row.append(lbl, input, by);
+      card.appendChild(row);
+    }
+    container.appendChild(card);
+  }
+}
+
+function bindMeals() {
+  $('#week-prev').addEventListener('click', () => {
+    weekStart.setDate(weekStart.getDate() - 7);
+    renderMeals();
+  });
+  $('#week-next').addEventListener('click', () => {
+    weekStart.setDate(weekStart.getDate() + 7);
+    renderMeals();
+  });
+}
+
 /* ---------- Historik ---------- */
 function renderHistory() {
   const tbody = $('#history-body');
@@ -164,7 +281,63 @@ function renderHistory() {
 }
 
 /* ---------- Inställningar ---------- */
+function renderAccount() {
+  const user = cloud.cloudAvailable() ? cloud.currentUser() : null;
+  $('#account-logged-out').hidden = !!user;
+  $('#account-logged-in').hidden = !user;
+  if (user) {
+    const name = user.user_metadata?.display_name;
+    $('#acc-who').textContent = name ? `${name} (${user.email})` : user.email;
+  }
+}
+
+function bindAccount() {
+  $('#btn-signin').addEventListener('click', async () => {
+    const email = $('#acc-email').value.trim();
+    const password = $('#acc-password').value;
+    if (!email || !password) { toast('Fyll i e-post och lösenord.', true); return; }
+    try {
+      await cloud.signIn(email, password);
+      toast('Inloggad ✓ — synkar …');
+      renderAccount();
+    } catch (err) { toast(`Inloggningen misslyckades: ${err.message}`, true); }
+  });
+
+  $('#btn-signup').addEventListener('click', async () => {
+    const email = $('#acc-email').value.trim();
+    const password = $('#acc-password').value;
+    const name = $('#acc-name').value.trim();
+    if (!email || password.length < 8) {
+      toast('Ange e-post och ett lösenord på minst 8 tecken.', true);
+      return;
+    }
+    try {
+      await cloud.signUp(email, password, name || email.split('@')[0]);
+      toast('Konto skapat! Kolla din e-post och klicka på bekräftelselänken.');
+    } catch (err) { toast(`Kunde inte skapa konto: ${err.message}`, true); }
+  });
+
+  $('#btn-signout').addEventListener('click', async () => {
+    try { await cloud.signOut(); } catch {}
+    renderAccount();
+    toast('Utloggad. Din data finns kvar lokalt på enheten.');
+  });
+
+  sync.onSyncState(state => {
+    const el = $('#sync-status');
+    const texts = {
+      syncing: 'Synk: pågår …',
+      ok: 'Synk: allt uppdaterat ✓',
+      pending: 'Synk: ändringar väntar (skickas när nätet är tillbaka)',
+      error: 'Synk: misslyckades — försöker igen senare',
+      offline: 'Synk: offline-läge',
+    };
+    if (el) el.textContent = texts[state] || 'Synk: –';
+  });
+}
+
 function renderSettings() {
+  renderAccount();
   const g = store.getGoals();
   $('#goal-weight').value = g.weightTarget ?? '';
   $('#goal-fasting').value = g.fastingHours;
@@ -217,6 +390,7 @@ function bindSettings() {
       const n = store.mergeImported(data);
       status.textContent = '';
       toast(`Import klar: ${Object.keys(data).length} dagar, ${n} värden ✓`);
+      sync.pushDates(Object.keys(data));
     } catch (err) {
       status.textContent = '';
       toast(`Importen misslyckades: ${err.message}`, true);
@@ -231,6 +405,7 @@ function bindSettings() {
       const data = parseHealthAutoExport(await file.text());
       const n = store.mergeImported(data);
       toast(`Import klar: ${Object.keys(data).length} dagar, ${n} värden ✓`);
+      sync.pushDates(Object.keys(data));
     } catch (err) { toast(`Importen misslyckades: ${err.message}`, true); }
     ev.target.value = '';
   });
@@ -274,6 +449,14 @@ function init() {
   handleLogURL();
   bindTodayForm();
   bindSettings();
+  bindAccount();
+  bindMeals();
+
+  // Molnsynk i bakgrunden; UI:t körs lokalt direkt
+  sync.initSync(() => {
+    renderAccount();
+    show(currentView);
+  });
 
   $$('.tabbar button').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
   $$('#range-row button').forEach(b => b.addEventListener('click', () => {

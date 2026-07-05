@@ -1,6 +1,6 @@
 /* Enkel offline-cache: appskalet cachas vid installation, nätet först för
    uppdateringar, cache som fallback. Höj CACHE-versionen vid varje release. */
-const CACHE = 'longevity-v1';
+const CACHE = 'longevity-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,10 @@ const ASSETS = [
   './js/store.js',
   './js/charts.js',
   './js/import.js',
+  './js/config.js',
+  './js/cloud.js',
+  './js/sync.js',
+  './js/vendor/supabase-js.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',
@@ -30,6 +34,8 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  // API-anrop mot Supabase ska aldrig cachas (färsk data + auth)
+  if (new URL(e.request.url).hostname.endsWith('.supabase.co')) return;
   e.respondWith(
     fetch(e.request)
       .then((res) => {
