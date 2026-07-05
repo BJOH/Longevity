@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Longevity — Hämta data från Apple Hälsa</title>
+  <link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+  <style>
+    :root { --ink: #0b0b0b; --ink-2: #52514e; --surface: #fcfcfb; --page: #f9f9f7;
+            --border: rgba(11,11,11,0.10); --accent: #2a78d6; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #fff; --ink-2: #c3c2b7; --surface: #1a1a19; --page: #0d0d0d;
+              --border: rgba(255,255,255,0.10); --accent: #3987e5; }
+    }
+    body { margin: 0 auto; max-width: 680px; padding: 16px;
+           font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+           background: var(--page); color: var(--ink); line-height: 1.55; }
+    h1 { font-size: 22px; } h2 { font-size: 17px; margin-top: 28px; }
+    a { color: var(--accent); }
+    ol li, ul li { margin-bottom: 6px; }
+    code, pre { background: var(--surface); border: 1px solid var(--border);
+                border-radius: 6px; font-size: 13px; }
+    code { padding: 1px 5px; }
+    pre { padding: 12px; overflow-x: auto; }
+    .card { background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 4px 16px; margin: 12px 0; }
+    .back { display: inline-block; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <a class="back" href="../index.html">← Tillbaka till appen</a>
+  <h1>Hämta data från Apple Hälsa</h1>
+  <p>Apple släpper inte in webbsidor direkt i Hälsa-appen (HealthKit kräver en
+  installerad iOS-app), men det finns tre smidiga vägar — från helautomatisk
+  daglig loggning till engångsimport av hela historiken.</p>
+
+  <h2>1. Daglig automatisk loggning med en iOS-genväg (rekommenderas)</h2>
+  <div class="card">
+    <p>Appen kan ta emot värden via adressraden. En genväg i
+    <strong>Genvägar</strong>-appen hämtar gårdagens sömn, steg och
+    träningsminuter ur Hälsa och öppnar Longevity med värdena ifyllda —
+    ett tryck, eller helt automatiskt varje morgon.</p>
+    <ol>
+      <li>Öppna <strong>Genvägar</strong> på iPhone → <strong>+</strong> ny genväg.</li>
+      <li>Lägg till åtgärden <strong>”Hitta hälsoexempel”</strong> (Find Health
+          Samples): typ <em>Steg</em>, gruppera per dag, igår. Upprepa för
+          <em>Träningsminuter</em> och <em>Sömn</em> (sov-tid).</li>
+      <li>Lägg till åtgärden <strong>”Öppna URL”</strong> och bygg adressen med
+          variablerna från stegen ovan:</li>
+    </ol>
+    <pre>https://DIN-ADRESS/index.html#log?date=IGÅR&amp;steps=STEG&amp;exercise=MIN&amp;sleep=TIMMAR</pre>
+    <p>Parametrar (alla valfria): <code>date</code> (ÅÅÅÅ-MM-DD, annars idag),
+    <code>weight</code> (kg), <code>sleep</code> (timmar), <code>steps</code>,
+    <code>exercise</code> (minuter), <code>fasting</code> (timmar),
+    <code>diet=1</code>. Decimaler funkar med både punkt och komma.</p>
+    <p>Kör genvägen automatiskt: Genvägar → <strong>Automation</strong> →
+    <em>Tid på dagen</em> (t.ex. 08:00) → välj din genväg → stäng av
+    ”Fråga innan körning”.</p>
+  </div>
+
+  <h2>2. Health Auto Export-appen (störst automatik för historik)</h2>
+  <div class="card">
+    <p>Appen <a href="https://apps.apple.com/app/id1115567069">Health Auto
+    Export</a> (App Store) exporterar Hälsa-data som JSON, schemalagt om du
+    vill. Välj mätvärdena <em>Weight/Body Mass</em>, <em>Sleep Analysis</em>,
+    <em>Step Count</em> och <em>Apple Exercise Time</em>, exportera som JSON
+    och importera filen under <strong>Mer → Apple Hälsa</strong> i Longevity.</p>
+  </div>
+
+  <h2>3. Engångsimport av hela historiken (export.xml)</h2>
+  <div class="card">
+    <ol>
+      <li>iPhone → <strong>Hälsa</strong>-appen → din profilbild →
+          <strong>Exportera alla hälsodata</strong>.</li>
+      <li>Du får en <code>export.zip</code> — packa upp den (tryck på filen i
+          Filer-appen) så att du ser <code>export.xml</code>.</li>
+      <li>I Longevity: <strong>Mer → Apple Hälsa → export.xml</strong> och välj
+          filen. Stora filer funkar — den läses i bitar direkt i mobilen.</li>
+    </ol>
+    <p>Importen hämtar vikt, sömn (sammanslagna intervall så att klocka +
+    telefon inte dubbelräknas), steg och träningsminuter. Värden du redan
+    matat in för hand skrivs inte över.</p>
+  </div>
+
+  <h2>Bra att veta</h2>
+  <ul>
+    <li>All data sparas <strong>lokalt i din webbläsare</strong> — ingenting
+        laddas upp någonstans. Ta en backup då och då under
+        <strong>Mer → Data</strong>.</li>
+    <li>Lägg appen på hemskärmen: öppna sidan i Safari → dela-knappen →
+        <strong>Lägg till på hemskärmen</strong>. Då öppnas den i helskärm som
+        en vanlig app och funkar offline.</li>
+  </ul>
+</body>
+</html>
