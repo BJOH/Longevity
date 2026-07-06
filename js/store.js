@@ -7,6 +7,7 @@ export const DEFAULT_GOALS = {
   exerciseMin: 30,      // minuter träning per dag
   sleepHours: 7.5,      // timmar sömn per natt
   steps: 8000,          // steg per dag
+  rules: '',            // egna regler i punktform (- och --), synkas med målen
   theme: 'auto',        // auto | light | dark
 };
 
@@ -179,6 +180,13 @@ export function goalStatus(dateKey) {
       detail: e.dietOk === true ? 'Klart' : 'Ej avbockat',
     },
   ];
+}
+
+/* Andel avklarade mål för en dag, eller null om inget alls är loggat. */
+export function goalFraction(dateKey) {
+  if (!state.entries[dateKey]) return null;
+  const st = goalStatus(dateKey);
+  return { done: st.filter(s => s.done).length, total: st.length };
 }
 
 /* Antal dagar i rad (bakåt från idag) där alla mål är uppfyllda. */
