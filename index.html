@@ -22,7 +22,38 @@
   <span id="today-date"></span>
 </header>
 
-<main>
+<!-- ===== INLOGGNING (förstasida tills man är inloggad) ===== -->
+<section id="auth-screen" hidden>
+  <div class="auth-box">
+    <img src="icons/icon.svg" alt="" class="auth-logo">
+    <h2>Välkommen till Longevity</h2>
+    <p class="hint">Logga in för att komma åt din hälsodata och er
+      gemensamma måltidsplan. Du hålls inloggad på den här enheten.</p>
+    <div class="card form-card">
+      <label>E-post
+        <input id="acc-email" type="email" autocomplete="email" inputmode="email">
+      </label>
+      <label>Lösenord
+        <input id="acc-password" type="password" autocomplete="current-password" minlength="8">
+      </label>
+      <button id="btn-signin" class="btn">Logga in</button>
+      <details class="auth-signup">
+        <summary>Nytt konto? Skapa ett här</summary>
+        <label>Ditt namn
+          <input id="acc-name" type="text" autocomplete="name" placeholder="Björn">
+        </label>
+        <button id="btn-signup" class="btn btn-secondary">Skapa konto</button>
+        <p class="hint">Max två konton kan registreras (ni två i hushållet).
+          Du får ett mejl med en bekräftelselänk — klicka på den och logga
+          sedan in här.</p>
+      </details>
+    </div>
+    <p id="auth-offline" class="hint" hidden>⚠️ Ingen nätverksanslutning —
+      inloggning kräver nät första gången.</p>
+  </div>
+</section>
+
+<main hidden>
 
   <!-- ===== IDAG ===== -->
   <section class="view" data-view="today">
@@ -148,29 +179,9 @@
   <section class="view" data-view="settings" hidden>
     <h2>Konto & synk</h2>
     <div class="card form-card" id="account-card">
-      <div id="account-logged-out">
-        <p class="hint">Skapa ett konto för att synka din data mellan enheter
-          och dela måltidsplanen med din partner. Max två konton kan
-          registreras (ni två).</p>
-        <label>Namn (vid nytt konto)
-          <input id="acc-name" type="text" autocomplete="name" placeholder="Björn">
-        </label>
-        <label>E-post
-          <input id="acc-email" type="email" autocomplete="email" inputmode="email">
-        </label>
-        <label>Lösenord
-          <input id="acc-password" type="password" autocomplete="current-password" minlength="8">
-        </label>
-        <div class="row">
-          <button id="btn-signin" class="btn">Logga in</button>
-          <button id="btn-signup" class="btn btn-secondary">Skapa konto</button>
-        </div>
-      </div>
-      <div id="account-logged-in" hidden>
-        <p><strong id="acc-who"></strong></p>
-        <p class="hint" id="sync-status">Synk: –</p>
-        <button id="btn-signout" class="btn btn-secondary">Logga ut</button>
-      </div>
+      <p><strong id="acc-who"></strong></p>
+      <p class="hint" id="sync-status">Synk: –</p>
+      <button id="btn-signout" class="btn btn-secondary">Logga ut</button>
     </div>
 
     <h2>Mål</h2>
@@ -233,7 +244,7 @@
 
 </main>
 
-<nav class="tabbar">
+<nav class="tabbar" hidden>
   <button data-view="today" class="is-active"><span>☀️</span>Idag</button>
   <button data-view="trends"><span>📈</span>Trender</button>
   <button data-view="meals"><span>🍽️</span>Måltider</button>

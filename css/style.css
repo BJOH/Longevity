@@ -100,6 +100,31 @@ h2 { font-size: 15px; margin: 20px 4px 8px; color: var(--ink-2); font-weight: 60
 .hint { color: var(--muted); font-size: 13px; margin: 6px 2px; }
 .hint a { color: var(--accent); }
 
+/* ---------- Inloggningssida ---------- */
+#auth-screen {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 8vh 20px 24px;
+}
+.auth-box { text-align: center; }
+.auth-logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+.auth-box h2 { margin: 0 0 6px; font-size: 20px; color: var(--ink); }
+.auth-box .card { text-align: left; margin-top: 16px; }
+.auth-signup { margin-top: 4px; }
+.auth-signup summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 0;
+}
+.auth-signup[open] summary { margin-bottom: 8px; }
+
 /* ---------- Progressring ---------- */
 .progress-card {
   display: grid;
@@ -356,6 +381,7 @@ h2 { font-size: 15px; margin: 20px 4px 8px; color: var(--ink-2); font-weight: 60
 .history-table td { color: var(--ink); }
 
 /* ---------- Flikrad ---------- */
+.tabbar[hidden] { display: none; }
 .tabbar {
   position: fixed;
   bottom: 0; left: 0; right: 0;
