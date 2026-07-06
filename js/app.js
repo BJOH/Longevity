@@ -281,11 +281,22 @@ function renderHistory() {
   }
 }
 
+/* ---------- Inloggningsgrind ----------
+   Appen visas bara inloggad; annars är inloggningen förstasidan.
+   Sessionen sparas i webbläsaren så man hålls inloggad på enheten. */
+function updateGate() {
+  const user = cloud.cloudAvailable() ? cloud.currentUser() : null;
+  const authed = !!user;
+  $('#auth-screen').hidden = authed;
+  $('main').hidden = !authed;
+  $('.tabbar').hidden = !authed;
+  $('#auth-offline').hidden = cloud.cloudAvailable();
+  document.getElementById('today-date').hidden = !authed;
+}
+
 /* ---------- Inställningar ---------- */
 function renderAccount() {
   const user = cloud.cloudAvailable() ? cloud.currentUser() : null;
-  $('#account-logged-out').hidden = !!user;
-  $('#account-logged-in').hidden = !user;
   if (user) {
     const name = user.user_metadata?.display_name;
     $('#acc-who').textContent = name ? `${name} (${user.email})` : user.email;
@@ -300,7 +311,6 @@ function bindAccount() {
     try {
       await cloud.signIn(email, password);
       toast('Inloggad ✓ — synkar …');
-      renderAccount();
     } catch (err) { toast(`Inloggningen misslyckades: ${err.message}`, true); }
   });
 
@@ -320,8 +330,7 @@ function bindAccount() {
 
   $('#btn-signout').addEventListener('click', async () => {
     try { await cloud.signOut(); } catch {}
-    renderAccount();
-    toast('Utloggad. Din data finns kvar lokalt på enheten.');
+    toast('Utloggad.');
   });
 
   sync.onSyncState(state => {
@@ -454,10 +463,13 @@ function init() {
   bindAccount();
   bindMeals();
 
-  // Molnsynk i bakgrunden; UI:t körs lokalt direkt
+  // Inloggningsläget avgörs direkt (sparad session), full synk går i bakgrunden
   sync.initSync(() => {
-    renderAccount();
-    show(currentView);
+    updateGate();
+    if (cloud.cloudAvailable() && cloud.currentUser()) {
+      renderAccount();
+      show(currentView);
+    }
   });
 
   $$('.tabbar button').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));

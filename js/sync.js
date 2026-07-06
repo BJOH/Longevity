@@ -109,17 +109,29 @@ export async function pushDates(dateKeys) {
   }
 }
 
-export async function initSync(onReady) {
+/* onChange anropas direkt när inloggningsläget är känt (snabbt — läser bara
+   sparad session) och igen efter varje in-/utloggning och avslutad fullsynk,
+   så att UI:t kan visa rätt vy utan att vänta på nätverket. */
+export async function initSync(onChange) {
   const ok = await cloud.initCloud();
-  if (!ok) { notify('offline'); return; }
+  if (!ok) {
+    notify('offline');
+    if (onChange) onChange();
+    return;
+  }
 
   store.setSyncHandler({ entry: pushEntrySafe, goals: pushGoalsSafe });
   cloud.onAuthChange(async (user) => {
-    if (user) await fullSync();
-    if (onReady) onReady();
+    if (onChange) onChange();
+    if (user) {
+      await fullSync();
+      if (onChange) onChange();
+    }
   });
   window.addEventListener('online', () => flushPending().catch(() => {}));
 
-  if (cloud.currentUser()) await fullSync();
-  if (onReady) onReady();
+  if (onChange) onChange();
+  if (cloud.currentUser()) {
+    fullSync().then(() => { if (onChange) onChange(); });
+  }
 }
