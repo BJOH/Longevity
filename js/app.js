@@ -29,6 +29,48 @@ function show(view) {
   window.scrollTo(0, 0);
 }
 
+/* Färgskala för måluppfyllnad: blå (0 mål) → grön (alla mål). */
+function goalColor(frac) {
+  const h = Math.round(212 + (120 - 212) * frac);
+  const s = Math.round(66 + (86 - 66) * frac);
+  const l = Math.round(50 + (34 - 50) * frac);
+  return `hsl(${h} ${s}% ${l}%)`;
+}
+
+/* Regler: rader med "-" blir punkter, "--" underpunkter, övriga rubriker. */
+function renderRulesInto(container, text) {
+  container.textContent = '';
+  let topUl = null, subUl = null;
+  for (const raw of (text || '').split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    const sub = /^(--|––|—)\s*/.exec(line);
+    const top = !sub && /^[-–]\s*/.exec(line);
+    if (sub) {
+      if (!topUl) { topUl = document.createElement('ul'); container.appendChild(topUl); }
+      if (!subUl) {
+        subUl = document.createElement('ul');
+        (topUl.lastElementChild || topUl.appendChild(document.createElement('li'))).appendChild(subUl);
+      }
+      const li = document.createElement('li');
+      li.textContent = line.slice(sub[0].length);
+      subUl.appendChild(li);
+    } else if (top) {
+      if (!topUl) { topUl = document.createElement('ul'); container.appendChild(topUl); }
+      const li = document.createElement('li');
+      li.textContent = line.slice(top[0].length);
+      topUl.appendChild(li);
+      subUl = null;
+    } else {
+      const h = document.createElement('strong');
+      h.className = 'rules-heading';
+      h.textContent = line;
+      container.appendChild(h);
+      topUl = null; subUl = null;
+    }
+  }
+}
+
 /* ---------- Idag ---------- */
 function renderToday() {
   const key = store.todayKey();
@@ -40,11 +82,12 @@ function renderToday() {
     weekday: 'long', day: 'numeric', month: 'long',
   });
 
-  // Progressring
+  // Progressring — färgen går från blå till grön med antalet avklarade mål
   const pct = done / goals.length;
   const ring = $('#progress-ring-fg');
   const C = 2 * Math.PI * 52;
   ring.setAttribute('stroke-dasharray', `${(C * pct).toFixed(1)} ${C.toFixed(1)}`);
+  ring.style.stroke = goalColor(pct);
   $('#progress-count').textContent = `${done}/${goals.length}`;
   const streak = store.streak();
   $('#streak').textContent = streak > 0
@@ -88,6 +131,11 @@ function renderToday() {
   $('#fasting-computed').textContent = fast !== null
     ? `= ${String(fast).replace('.', ',')} h fasta`
     : '';
+
+  // Mina regler (skrivs under Mer, visas här)
+  const rules = store.getGoals().rules || '';
+  $('#today-rules-box').hidden = !rules.trim();
+  if (rules.trim()) renderRulesInto($('#today-rules'), rules);
 }
 
 function bindTodayForm() {
@@ -254,8 +302,62 @@ function bindMeals() {
   });
 }
 
+/* ---------- Kalender (måluppfyllnad per dag) ---------- */
+let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+function renderCalendar() {
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  const label = calMonth.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' });
+  $('#cal-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+  const grid = $('#calendar');
+  grid.textContent = '';
+
+  const first = new Date(y, m, 1);
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const offset = (first.getDay() + 6) % 7; // måndag först
+  const todayK = store.todayKey();
+
+  for (let i = 0; i < offset; i++) grid.appendChild(document.createElement('span'));
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = store.todayKey(new Date(y, m, day, 12));
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'cal-cell';
+    if (key === todayK) cell.classList.add('is-today');
+    if (key > todayK) cell.classList.add('is-future');
+    const num = document.createElement('span');
+    num.className = 'cal-num';
+    num.textContent = day;
+    const dot = document.createElement('span');
+    dot.className = 'cal-dot';
+    const frac = key <= todayK ? store.goalFraction(key) : null;
+    if (frac) {
+      dot.style.background = goalColor(frac.done / frac.total);
+      cell.addEventListener('click', () =>
+        toast(`${day} ${label.split(' ')[0]}: ${frac.done}/${frac.total} mål avklarade`));
+    } else {
+      dot.classList.add('is-empty');
+    }
+    cell.append(num, dot);
+    grid.appendChild(cell);
+  }
+}
+
+function bindCalendar() {
+  $('#cal-prev').addEventListener('click', () => {
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1);
+    renderCalendar();
+  });
+  $('#cal-next').addEventListener('click', () => {
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1);
+    renderCalendar();
+  });
+}
+
 /* ---------- Historik ---------- */
 function renderHistory() {
+  renderCalendar();
   const tbody = $('#history-body');
   tbody.textContent = '';
   const rows = store.allEntriesSorted().slice(0, 90);
@@ -355,6 +457,7 @@ function renderSettings() {
   $('#goal-exercise').value = g.exerciseMin;
   $('#goal-sleep').value = sv(g.sleepHours);
   $('#goal-steps').value = g.steps;
+  $('#rules-input').value = g.rules || '';
   $('#theme-select').value = g.theme || 'auto';
 }
 
@@ -365,6 +468,10 @@ function bindSettings() {
   $('#goal-exercise').addEventListener('change', ev => store.setGoals({ exerciseMin: num(ev.target) ?? 30 }));
   $('#goal-sleep').addEventListener('change', ev => store.setGoals({ sleepHours: num(ev.target) ?? 7.5 }));
   $('#goal-steps').addEventListener('change', ev => store.setGoals({ steps: num(ev.target) ?? 8000 }));
+  $('#rules-input').addEventListener('change', ev => {
+    store.setGoals({ rules: ev.target.value });
+    toast('Regler sparade ✓');
+  });
   $('#theme-select').addEventListener('change', ev => { store.setGoals({ theme: ev.target.value }); applyTheme(); });
 
   // Backup
@@ -462,6 +569,7 @@ function init() {
   bindSettings();
   bindAccount();
   bindMeals();
+  bindCalendar();
 
   // Inloggningsläget avgörs direkt (sparad session), full synk går i bakgrunden
   sync.initSync(() => {

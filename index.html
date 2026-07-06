@@ -73,6 +73,11 @@
     <h2>Dagens mål</h2>
     <ul id="goal-list" class="goal-list"></ul>
 
+    <details class="card rules-card" id="today-rules-box" hidden>
+      <summary>📜 Mina regler</summary>
+      <div id="today-rules"></div>
+    </details>
+
     <h2>Logga</h2>
     <div class="card form-card">
       <label>⚖️ Vikt (kg)
@@ -160,6 +165,23 @@
 
   <!-- ===== HISTORIK ===== -->
   <section class="view" data-view="history" hidden>
+    <div class="week-nav">
+      <button id="cal-prev" class="week-btn" aria-label="Föregående månad">‹</button>
+      <strong id="cal-label"></strong>
+      <button id="cal-next" class="week-btn" aria-label="Nästa månad">›</button>
+    </div>
+    <div class="card cal-card">
+      <div class="cal-grid cal-head">
+        <span>M</span><span>T</span><span>O</span><span>T</span><span>F</span><span>L</span><span>S</span>
+      </div>
+      <div id="calendar" class="cal-grid"></div>
+      <div class="cal-legend">
+        <span class="cal-legend-dot" style="background:hsl(212 66% 50%)"></span> 0 mål
+        <span class="cal-legend-bar"></span>
+        <span class="cal-legend-dot" style="background:hsl(120 86% 34%)"></span> alla mål
+      </div>
+    </div>
+
     <h2>Historik</h2>
     <p id="history-empty" class="hint" hidden>Ingen data ännu — börja logga under Idag.</p>
     <div class="table-scroll">
@@ -214,6 +236,16 @@
           </select>
         </label>
       </div>
+    </div>
+
+    <h2>Mina regler</h2>
+    <div class="card form-card">
+      <p class="hint">Skriv dina regler för kost, träning och sömn — en per
+        rad. Börja raden med <code>-</code> för en punkt och <code>--</code>
+        för en underpunkt. Rader utan streck blir rubriker. Reglerna visas på
+        Idag-sidan och följer med ditt konto.</p>
+      <textarea id="rules-input" rows="10" spellcheck="false"
+        placeholder="Kost:&#10;- Jag äter keto&#10;-- max 5 % kolhydrater per måltid&#10;-- inga snabba kolhydrater&#10;Sömn:&#10;- Skärmfritt en timme före läggdags"></textarea>
     </div>
 
     <h2>Apple Hälsa</h2>

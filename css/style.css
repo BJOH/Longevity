@@ -353,6 +353,108 @@ h2 { font-size: 15px; margin: 20px 4px 8px; color: var(--ink-2); font-weight: 60
 .meal-by { font-size: 11px; color: var(--muted); max-width: 64px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ---------- Kalender ---------- */
+.cal-card { padding: 12px 8px 10px; }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.cal-head span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  padding-bottom: 6px;
+}
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 0 6px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+}
+.cal-cell.is-today { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cal-cell.is-future .cal-num { color: var(--grid); }
+.cal-num { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.cal-dot.is-empty {
+  background: none;
+  border: 1px solid var(--grid);
+  width: 10px;
+  height: 10px;
+}
+.cal-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.cal-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.cal-legend-bar {
+  width: 56px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, hsl(212 66% 50%), hsl(166 76% 42%), hsl(120 86% 34%));
+}
+
+/* ---------- Mina regler ---------- */
+.rules-card summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+.rules-card[open] summary { margin-bottom: 6px; }
+#today-rules .rules-heading,
+#today-rules strong {
+  display: block;
+  margin: 8px 0 2px;
+  font-size: 14px;
+  color: var(--ink);
+}
+#today-rules ul {
+  margin: 2px 0;
+  padding-left: 20px;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+#today-rules ul ul { font-size: 13px; color: var(--muted); }
+.form-card textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  resize: vertical;
+}
+.form-card textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hint code {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
 /* ---------- Historik ---------- */
 .table-scroll { overflow-x: auto; }
 .history-table {
