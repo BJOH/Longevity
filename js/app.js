@@ -72,13 +72,14 @@ function renderToday() {
     list.appendChild(li);
   }
 
-  // Formulärvärden
-  $('#in-weight').value = e.weight ?? '';
+  // Formulärvärden (decimalfält visas med svenskt komma)
+  const sv = v => (v === undefined || v === null) ? '' : String(v).replace('.', ',');
+  $('#in-weight').value = sv(e.weight);
   $('#in-first-meal').value = e.firstMeal ?? '';
   $('#in-last-meal').value = e.lastMeal ?? '';
   $('#in-exercise').value = e.exerciseMin ?? '';
   $('#in-exercise-type').value = e.exerciseType ?? '';
-  $('#in-sleep').value = e.sleepHours ?? '';
+  $('#in-sleep').value = sv(e.sleepHours);
   $('#in-steps').value = e.steps ?? '';
   $('#in-diet').checked = e.dietOk === true;
   $('#in-notes').value = e.notes ?? '';
@@ -339,10 +340,11 @@ function bindAccount() {
 function renderSettings() {
   renderAccount();
   const g = store.getGoals();
-  $('#goal-weight').value = g.weightTarget ?? '';
-  $('#goal-fasting').value = g.fastingHours;
+  const sv = v => (v === undefined || v === null) ? '' : String(v).replace('.', ',');
+  $('#goal-weight').value = sv(g.weightTarget);
+  $('#goal-fasting').value = sv(g.fastingHours);
   $('#goal-exercise').value = g.exerciseMin;
-  $('#goal-sleep').value = g.sleepHours;
+  $('#goal-sleep').value = sv(g.sleepHours);
   $('#goal-steps').value = g.steps;
   $('#theme-select').value = g.theme || 'auto';
 }
