@@ -45,7 +45,7 @@
     <h2>Logga</h2>
     <div class="card form-card">
       <label>⚖️ Vikt (kg)
-        <input id="in-weight" type="number" inputmode="decimal" step="0.1" min="20" max="300" placeholder="82,4">
+        <input id="in-weight" type="text" inputmode="decimal" autocomplete="off" placeholder="82,4">
       </label>
       <div class="row">
         <label>⏳ Första måltid
@@ -66,7 +66,7 @@
       </div>
       <div class="row">
         <label>😴 Sömn (h)
-          <input id="in-sleep" type="number" inputmode="decimal" step="0.1" min="0" max="20" placeholder="7,5">
+          <input id="in-sleep" type="text" inputmode="decimal" autocomplete="off" placeholder="7,5">
         </label>
         <label>👣 Steg
           <input id="in-steps" type="number" inputmode="numeric" min="0" placeholder="8000">
@@ -177,10 +177,10 @@
     <div class="card form-card">
       <div class="row">
         <label>Målvikt (kg)
-          <input id="goal-weight" type="number" inputmode="decimal" step="0.1" placeholder="ej satt">
+          <input id="goal-weight" type="text" inputmode="decimal" autocomplete="off" placeholder="ej satt">
         </label>
         <label>Fasta (h/dygn)
-          <input id="goal-fasting" type="number" inputmode="decimal" step="0.5" min="0" max="23">
+          <input id="goal-fasting" type="text" inputmode="decimal" autocomplete="off">
         </label>
       </div>
       <div class="row">
@@ -188,7 +188,7 @@
           <input id="goal-exercise" type="number" inputmode="numeric" min="0">
         </label>
         <label>Sömn (h/natt)
-          <input id="goal-sleep" type="number" inputmode="decimal" step="0.1" min="0">
+          <input id="goal-sleep" type="text" inputmode="decimal" autocomplete="off">
         </label>
       </div>
       <div class="row">
