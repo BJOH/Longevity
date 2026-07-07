@@ -13,20 +13,19 @@ enheter och mellan hushållets två konton.
   Fastan beräknas automatiskt ur ätfönstret (första/sista måltid).
 - **Trender** — kurvor med mållinjer för vikt, sömn, fasta, träning och steg
   över 7/30/90/365 dagar, med tooltip och direktetiketter. Mörkt läge stöds.
-- **Måltider** — delad veckoplan (frukost/lunch/middag) mellan hushållets två
-  konton; alla ser vem som lagt in vad.
+- **Måltider** — veckoplan med sex platser (frukost, mellanmål ×3, lunch,
+  middag). Per plats väljer var och en under *Mer* om den ska visas och om
+  den delas i hushållet eller är privat.
 - **Historik** — tabell över alla loggade dagar.
 - **Konto & synk** — valfritt konto (Supabase) synkar hälsodata och mål mellan
   enheter. Hälsodatan är privat per konto (Row Level Security); endast
   måltidsplanen delas. Registreringen är låst till max två konton.
   Utan konto, eller offline, fungerar allt lokalt — ändringar köas och
   skickas när nätet är tillbaka.
-- **Apple Hälsa** — tre vägar in, se [guiden](docs/apple-health.html):
-  1. iOS-genväg som loggar sömn/steg/träning automatiskt varje morgon
-     (via `#log?...`-URL:en).
-  2. [Health Auto Export](https://apps.apple.com/app/id1115567069)-JSON.
-  3. Hela historiken via Hälsa-appens `export.xml` (läses i bitar,
-     klarar stora filer; sömnintervall slås ihop och steg dubbelräknas inte).
+- **Apple Hälsa** — snabbloggning via `#log?...`-URL:en fungerar med en
+  iOS-genväg (se [guiden](docs/apple-health.html)). Filimporten
+  (export.xml/Health Auto Export) är borttagen ur UI:t tills vidare;
+  parsern finns kvar i `js/import.js`.
 - **PWA** — lägg till på hemskärmen från Safari så öppnas den i helskärm och
   funkar offline (service worker + manifest).
 - **Backup** — exportera/återställ all data som JSON under *Mer → Data*.

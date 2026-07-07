@@ -113,7 +113,7 @@
         <span>🥗 Jag åt enligt plan idag</span>
       </label>
       <label>📝 Anteckning
-        <input id="in-notes" type="text" placeholder="valfritt">
+        <textarea id="in-notes" rows="1" placeholder="valfritt"></textarea>
       </label>
     </div>
   </section>
@@ -238,6 +238,14 @@
       </div>
     </div>
 
+    <h2>Måltider i veckoplanen</h2>
+    <div class="card form-card">
+      <p class="hint"><strong>Visa</strong> styr vilka måltider du ser i din
+        veckoplan. <strong>Delad</strong> betyder att ni planerar måltiden
+        ihop — avbockad är den privat och syns inte för din partner.</p>
+      <div id="meal-prefs"></div>
+    </div>
+
     <h2>Mina regler</h2>
     <div class="card form-card">
       <p class="hint">Skriv dina regler för kost, träning och sömn — en per
@@ -246,20 +254,6 @@
         Idag-sidan och följer med ditt konto.</p>
       <textarea id="rules-input" rows="10" spellcheck="false"
         placeholder="Kost:&#10;- Jag äter keto&#10;-- max 5 % kolhydrater per måltid&#10;-- inga snabba kolhydrater&#10;Sömn:&#10;- Skärmfritt en timme före läggdags"></textarea>
-    </div>
-
-    <h2>Apple Hälsa</h2>
-    <div class="card form-card">
-      <p class="hint">Importera vikt, sömn, steg och träningsminuter från
-        Apple Hälsa. Se <a href="docs/apple-health.html">guiden</a> för tre sätt
-        att hämta data — inklusive automatisk daglig loggning via en iOS-genväg.</p>
-      <label class="file-label">Hälsa-appens export (export.xml)
-        <input id="file-apple-xml" type="file" accept=".xml,application/xml,text/xml">
-      </label>
-      <label class="file-label">Health Auto Export (JSON)
-        <input id="file-hae-json" type="file" accept=".json,application/json">
-      </label>
-      <p id="import-status" class="hint" role="status"></p>
     </div>
 
     <h2>Data</h2>
