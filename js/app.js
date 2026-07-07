@@ -333,7 +333,18 @@ function renderCalendar() {
     dot.className = 'cal-dot';
     const frac = key <= todayK ? store.goalFraction(key) : null;
     if (frac) {
-      dot.style.background = goalColor(frac.done / frac.total);
+      const pct = frac.done / frac.total;
+      const col = goalColor(pct);
+      if (frac.done === frac.total) {
+        // Alla mål klara → helt fylld cirkel
+        dot.classList.add('is-full');
+        dot.style.background = col;
+      } else {
+        // Donut: färgad båge på ljusgrå ring
+        dot.classList.add('is-ring');
+        dot.style.background =
+          `conic-gradient(${col} 0turn ${pct}turn, var(--field) ${pct}turn 1turn)`;
+      }
       cell.addEventListener('click', () =>
         toast(`${day} ${label.split(' ')[0]}: ${frac.done}/${frac.total} mål avklarade`));
     } else {

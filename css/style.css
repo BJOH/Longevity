@@ -450,15 +450,20 @@ h2 {
 .cal-cell.is-future .cal-num { color: var(--baseline); }
 .cal-num { font-size: 14px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .cal-dot {
-  width: 13px;
-  height: 13px;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
+}
+/* Donut: färgad båge (conic-gradient sätts inline) med urstansat hål */
+.cal-dot.is-ring {
+  -webkit-mask: radial-gradient(circle at center, transparent 0 50%, #000 52%);
+  mask: radial-gradient(circle at center, transparent 0 50%, #000 52%);
 }
 .cal-dot.is-empty {
   background: none;
   border: 1.5px solid var(--grid);
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
 }
 .cal-legend {
   display: flex;
@@ -469,7 +474,12 @@ h2 {
   font-size: 11px;
   color: var(--muted);
 }
-.cal-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.cal-legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.cal-legend-ring {
+  background: conic-gradient(hsl(212 66% 50%) 0turn 0.25turn, var(--field) 0.25turn 1turn);
+  -webkit-mask: radial-gradient(circle at center, transparent 0 50%, #000 52%);
+  mask: radial-gradient(circle at center, transparent 0 50%, #000 52%);
+}
 .cal-legend-bar {
   width: 56px;
   height: 6px;
