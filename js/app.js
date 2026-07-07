@@ -2,7 +2,7 @@ import * as store from './store.js';
 import * as cloud from './cloud.js';
 import * as sync from './sync.js';
 import { renderChart } from './charts.js';
-import { parseAppleHealthXML, parseHealthAutoExport, parseLogURL } from './import.js';
+import { parseLogURL } from './import.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -153,6 +153,7 @@ function bindTodayForm() {
   $('#in-steps').addEventListener('change', ev => save({ steps: num(ev.target) }));
   $('#in-diet').addEventListener('change', ev => save({ dietOk: ev.target.checked ? true : '' }));
   $('#in-notes').addEventListener('change', ev => save({ notes: ev.target.value.trim() }));
+  $('#in-notes').addEventListener('input', ev => autoGrow(ev.target));
 }
 
 /* ---------- Trender ---------- */
@@ -191,9 +192,18 @@ function renderTrends() {
 /* ---------- Måltider (delad veckoplan) ---------- */
 const MEAL_TYPES = [
   { key: 'frukost', label: 'Frukost', icon: '🌅' },
+  { key: 'mellanmal_fm', label: 'Mellanmål', icon: '🍎' },
   { key: 'lunch', label: 'Lunch', icon: '🥪' },
+  { key: 'mellanmal_em', label: 'Mellanmål', icon: '🥜' },
   { key: 'middag', label: 'Middag', icon: '🍲' },
+  { key: 'mellanmal_kvall', label: 'Kvällsmål', icon: '🌙' },
 ];
+
+/* Textfält som växer på höjden med innehållet */
+function autoGrow(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = `${ta.scrollHeight}px`;
+}
 const DAY_NAMES = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
 
 let weekStart = mondayOf(new Date());
@@ -245,8 +255,17 @@ async function renderMeals() {
     return;
   }
   const nameOf = id => profiles.find(p => p.id === id)?.display_name || '';
-  const mealAt = (dateKey, type) =>
-    meals.find(m => m.date === dateKey && m.meal_type === type);
+  const prefs = store.getGoals().mealPrefs;
+  const myId = cloud.currentUser().id;
+  const visibleTypes = MEAL_TYPES.filter(mt => prefs[mt.key]?.show);
+  if (!visibleTypes.length) {
+    status.textContent = 'Inga måltider valda — välj vilka som ska visas under Mer → Måltider i veckoplanen.';
+    return;
+  }
+  // Delad plats → hushållets rad; privat plats → min egen rad
+  const mealAt = (dateKey, type, shared) =>
+    meals.find(m => m.date === dateKey && m.meal_type === type &&
+      cloud.isSharedMeal(m) === shared);
 
   const todayK = store.todayKey();
   for (const d of days) {
@@ -262,30 +281,34 @@ async function renderMeals() {
     head.append(name, date);
     card.appendChild(head);
 
-    for (const mt of MEAL_TYPES) {
-      const meal = mealAt(dateKey, mt.key);
+    for (const mt of visibleTypes) {
+      const shared = prefs[mt.key]?.shared !== false;
+      const meal = mealAt(dateKey, mt.key, shared);
       const row = document.createElement('label');
       row.className = 'meal-row';
       const lbl = document.createElement('span');
       lbl.className = 'meal-type';
       lbl.textContent = `${mt.icon} ${mt.label}`;
-      const input = document.createElement('input');
-      input.type = 'text';
+      const input = document.createElement('textarea');
+      input.rows = 1;
       input.placeholder = '–';
       input.value = meal?.title || '';
+      input.addEventListener('input', () => autoGrow(input));
       input.addEventListener('change', async () => {
         const title = input.value.trim();
         try {
-          if (title) await cloud.upsertMeal(dateKey, mt.key, title);
-          else if (meal) await cloud.deleteMeal(dateKey, mt.key);
+          if (title) await cloud.upsertMeal(dateKey, mt.key, title, shared);
+          else if (meal) await cloud.deleteMeal(dateKey, mt.key, shared);
           toast('Måltidsplan sparad ✓');
         } catch { toast('Kunde inte spara — kontrollera nätet.', true); }
       });
       const by = document.createElement('span');
       by.className = 'meal-by';
-      by.textContent = meal?.created_by ? nameOf(meal.created_by) : '';
+      by.textContent = !shared ? '🔒'
+        : (meal?.created_by && meal.created_by !== myId ? nameOf(meal.created_by) : '');
       row.append(lbl, input, by);
       card.appendChild(row);
+      requestAnimationFrame(() => autoGrow(input));
     }
     container.appendChild(card);
   }
@@ -459,8 +482,44 @@ function bindAccount() {
   });
 }
 
+function renderMealPrefs() {
+  const prefs = store.getGoals().mealPrefs;
+  const box = $('#meal-prefs');
+  box.textContent = '';
+  const head = document.createElement('div');
+  head.className = 'pref-row pref-head';
+  for (const t of ['Måltid', 'Visa', 'Delad']) {
+    const s = document.createElement('span');
+    s.textContent = t;
+    head.appendChild(s);
+  }
+  box.appendChild(head);
+  for (const mt of MEAL_TYPES) {
+    const p = prefs[mt.key];
+    const row = document.createElement('div');
+    row.className = 'pref-row';
+    const lbl = document.createElement('span');
+    lbl.textContent = `${mt.icon} ${mt.label}`;
+    row.appendChild(lbl);
+    for (const field of ['show', 'shared']) {
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = p[field] !== false;
+      cb.addEventListener('change', () => {
+        const next = { ...store.getGoals().mealPrefs };
+        next[mt.key] = { ...next[mt.key], [field]: cb.checked };
+        store.setGoals({ mealPrefs: next });
+        toast('Sparat ✓');
+      });
+      row.appendChild(cb);
+    }
+    box.appendChild(row);
+  }
+}
+
 function renderSettings() {
   renderAccount();
+  renderMealPrefs();
   const g = store.getGoals();
   const sv = v => (v === undefined || v === null) ? '' : String(v).replace('.', ',');
   $('#goal-weight').value = sv(g.weightTarget);
@@ -503,39 +562,6 @@ function bindSettings() {
       toast('Backup återställd ✓');
       applyTheme();
     } catch (err) { toast(`Kunde inte läsa filen: ${err.message}`, true); }
-    ev.target.value = '';
-  });
-
-  // Apple Health
-  $('#file-apple-xml').addEventListener('change', async ev => {
-    const file = ev.target.files[0];
-    if (!file) return;
-    const status = $('#import-status');
-    status.textContent = 'Läser export.xml … 0 %';
-    try {
-      const data = await parseAppleHealthXML(file, p => {
-        status.textContent = `Läser export.xml … ${Math.round(p * 100)} %`;
-      });
-      const n = store.mergeImported(data);
-      status.textContent = '';
-      toast(`Import klar: ${Object.keys(data).length} dagar, ${n} värden ✓`);
-      sync.pushDates(Object.keys(data));
-    } catch (err) {
-      status.textContent = '';
-      toast(`Importen misslyckades: ${err.message}`, true);
-    }
-    ev.target.value = '';
-  });
-
-  $('#file-hae-json').addEventListener('change', async ev => {
-    const file = ev.target.files[0];
-    if (!file) return;
-    try {
-      const data = parseHealthAutoExport(await file.text());
-      const n = store.mergeImported(data);
-      toast(`Import klar: ${Object.keys(data).length} dagar, ${n} värden ✓`);
-      sync.pushDates(Object.keys(data));
-    } catch (err) { toast(`Importen misslyckades: ${err.message}`, true); }
     ev.target.value = '';
   });
 

@@ -406,18 +406,50 @@ h2 {
   padding: 4px 0;
 }
 .meal-type { font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.meal-row input {
+.meal-row textarea {
   padding: 10px 12px;
+  font: inherit;
   font-size: 16px;
+  line-height: 1.4;
   color: var(--ink);
   background: var(--field);
   border: none;
   border-radius: 12px;
   min-width: 0;
+  resize: none;
+  overflow: hidden;
+  display: block;
 }
-.meal-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.meal-row textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .meal-by { font-size: 11px; color: var(--muted); max-width: 64px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Måltidsinställningar ---------- */
+.pref-row {
+  display: grid;
+  grid-template-columns: 1fr 52px 52px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: 15px;
+  font-weight: 600;
+}
+.pref-row:last-child { border-bottom: none; }
+.pref-head {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pref-row input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  justify-self: center;
+  accent-color: var(--accent);
+}
+.pref-head span:nth-child(n+2) { text-align: center; }
 
 /* ---------- Kalender ---------- */
 .cal-card { padding: 16px 10px 12px; }

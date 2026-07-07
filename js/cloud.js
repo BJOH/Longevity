@@ -135,26 +135,33 @@ export async function listProfiles() {
   return data;
 }
 
-/* ---------- Måltidsplan (delad) ---------- */
+/* ---------- Måltidsplan ----------
+   owner_key: noll-uuid = delad i hushållet, annars ägarens id (privat). */
+
+const SHARED_KEY = '00000000-0000-0000-0000-000000000000';
 
 export async function listMeals(fromDate, toDate) {
   const { data, error } = await sb.from('meal_plans')
-    .select('date, meal_type, title, notes, created_by')
+    .select('date, meal_type, title, notes, created_by, owner_key')
     .gte('date', fromDate).lte('date', toDate);
   if (error) throw error;
   return data;
 }
 
-export async function upsertMeal(dateKey, mealType, title, notes) {
+export const isSharedMeal = (row) => row.owner_key === SHARED_KEY;
+
+export async function upsertMeal(dateKey, mealType, title, shared) {
   const { error } = await sb.from('meal_plans').upsert({
-    date: dateKey, meal_type: mealType, title, notes: notes || null,
+    date: dateKey, meal_type: mealType, title,
+    owner_key: shared ? SHARED_KEY : user.id,
     created_by: user.id, updated_at: new Date().toISOString(),
-  }, { onConflict: 'date,meal_type' });
+  }, { onConflict: 'date,meal_type,owner_key' });
   if (error) throw error;
 }
 
-export async function deleteMeal(dateKey, mealType) {
+export async function deleteMeal(dateKey, mealType, shared) {
   const { error } = await sb.from('meal_plans')
-    .delete().eq('date', dateKey).eq('meal_type', mealType);
+    .delete().eq('date', dateKey).eq('meal_type', mealType)
+    .eq('owner_key', shared ? SHARED_KEY : user.id);
   if (error) throw error;
 }

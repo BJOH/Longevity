@@ -8,6 +8,16 @@ export const DEFAULT_GOALS = {
   sleepHours: 7.5,      // timmar sömn per natt
   steps: 8000,          // steg per dag
   rules: '',            // egna regler i punktform (- och --), synkas med målen
+  /* Per måltidsplats: show = syns i min veckoplan, shared = delas i hushållet
+     (annars privat och osynlig för partnern). Synkas med målen. */
+  mealPrefs: {
+    frukost: { show: true, shared: true },
+    mellanmal_fm: { show: false, shared: false },
+    lunch: { show: true, shared: true },
+    mellanmal_em: { show: false, shared: false },
+    middag: { show: true, shared: true },
+    mellanmal_kvall: { show: false, shared: false },
+  },
   theme: 'auto',        // auto | light | dark
 };
 
@@ -50,7 +60,11 @@ export function todayKey(d = new Date()) {
 }
 
 export function getGoals() {
-  return { ...state.goals };
+  // Djupmerga mealPrefs så nya platser får standardvärden
+  return {
+    ...state.goals,
+    mealPrefs: { ...DEFAULT_GOALS.mealPrefs, ...(state.goals.mealPrefs || {}) },
+  };
 }
 
 export function setGoals(patch) {
