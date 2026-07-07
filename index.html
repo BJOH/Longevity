@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Longevity</title>
   <meta name="description" content="Daglig hälsotracking: vikt, fasta, träning, sömn.">
-  <meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f3f1ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e0e10" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -277,11 +277,21 @@
 </main>
 
 <nav class="tabbar" hidden>
-  <button data-view="today" class="is-active"><span>☀️</span>Idag</button>
-  <button data-view="trends"><span>📈</span>Trender</button>
-  <button data-view="meals"><span>🍽️</span>Måltider</button>
-  <button data-view="history"><span>📋</span>Historik</button>
-  <button data-view="settings"><span>⚙️</span>Mer</button>
+  <button data-view="today" class="is-active">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+    Idag</button>
+  <button data-view="trends">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16.5 9 10l4 4 7.5-8"/><circle cx="20.5" cy="6" r="1.6" fill="currentColor" stroke="none"/></svg>
+    Trender</button>
+  <button data-view="meals">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v6a3 3 0 0 0 6 0V3M9 3v18"/><path d="M18 3c-2 3-2 7 0 9v9M18 3v9"/></svg>
+    Måltider</button>
+  <button data-view="history">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="4"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+    Historik</button>
+  <button data-view="settings">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/></svg>
+    Mer</button>
 </nav>
 
 <div id="toast" class="toast" role="status"></div>
