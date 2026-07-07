@@ -128,12 +128,22 @@ export function renderChart(container, opts) {
     }));
     svg.appendChild(el('path', {
       d: path, fill: 'none', stroke: colorVar,
-      'stroke-width': '2', 'stroke-linejoin': 'round', 'stroke-linecap': 'round',
+      'stroke-width': '2.5', 'stroke-linejoin': 'round', 'stroke-linecap': 'round',
     }));
-    // Ändpunkt: 2px ytring + fylld punkt, plus direktetikett för sista värdet
+    // Öppna punkter (ytfyllda med färgad ring) när serien är gles nog
+    if (pts.length <= 16) {
+      for (const [px, py] of pts) {
+        svg.appendChild(el('circle', {
+          cx: px, cy: py, r: 4, class: 'chart-open-dot', stroke: colorVar,
+        }));
+      }
+    }
+    // Ändpunkt + direktetikett för sista värdet
     const [ex, ey] = pts[pts.length - 1];
     svg.appendChild(el('circle', { cx: ex, cy: ey, r: 6.5, class: 'chart-surface-ring' }));
-    svg.appendChild(el('circle', { cx: ex, cy: ey, r: 4.5, fill: colorVar }));
+    svg.appendChild(el('circle', {
+      cx: ex, cy: ey, r: 4.5, class: 'chart-open-dot', stroke: colorVar,
+    }));
     const endLbl = el('text', {
       x: ex + 9, y: ey + 4, class: 'chart-end-label', 'text-anchor': 'start',
     });

@@ -158,15 +158,15 @@ function bindTodayForm() {
 /* ---------- Trender ---------- */
 const CHARTS = [
   { id: 'chart-weight', title: 'Vikt', metric: 'weight', type: 'line', unit: 'kg',
-    color: '--c-weight', decimals: 1, goalKey: 'weightTarget', goalLabel: 'Målvikt' },
+    color: '--chart-line', decimals: 1, goalKey: 'weightTarget', goalLabel: 'Målvikt' },
   { id: 'chart-sleep', title: 'Sömn', metric: 'sleepHours', type: 'line', unit: 'h',
-    color: '--c-sleep', decimals: 1, goalKey: 'sleepHours', goalLabel: 'Mål' },
+    color: '--chart-line', decimals: 1, goalKey: 'sleepHours', goalLabel: 'Mål' },
   { id: 'chart-fasting', title: 'Fasta', metric: 'fastingHours', type: 'line', unit: 'h',
-    color: '--c-fasting', decimals: 1, goalKey: 'fastingHours', goalLabel: 'Mål' },
+    color: '--chart-line', decimals: 1, goalKey: 'fastingHours', goalLabel: 'Mål' },
   { id: 'chart-exercise', title: 'Träning', metric: 'exerciseMin', type: 'column', unit: 'min',
-    color: '--c-exercise', decimals: 0, goalKey: 'exerciseMin', goalLabel: 'Mål' },
+    color: '--chart-line', decimals: 0, goalKey: 'exerciseMin', goalLabel: 'Mål' },
   { id: 'chart-steps', title: 'Steg', metric: 'steps', type: 'column', unit: 'steg',
-    color: '--c-steps', decimals: 0, goalKey: 'steps', goalLabel: 'Mål' },
+    color: '--chart-line', decimals: 0, goalKey: 'steps', goalLabel: 'Mål' },
 ];
 
 function renderTrends() {
