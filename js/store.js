@@ -168,8 +168,9 @@ export function latestWeight() {
   return null;
 }
 
-/* Viktprognos: minsta-kvadrat-trend över senaste 30 dagarnas vikter.
-   Är ett dietstartdatum satt ignoreras vikter före det, så att t.ex.
+/* Viktprognos: exponentiellt viktad minsta-kvadrat-trend över senaste
+   30 dagarnas vikter — nyare mätningar väger tyngre. Är ett
+   dietstartdatum satt ignoreras vikter före det, så att t.ex.
    en uppgång innan dieten inte drar prognosen åt fel håll.
    → { perDay, todayValue, lastPoint, reachDate } eller null vid för lite data.
    reachDate = beräknat datum då targetWeight nås (null om trenden pekar fel). */
@@ -185,14 +186,33 @@ export function weightForecast(targetWeight) {
     if (d >= windowStart && d <= todayNum) pts.push([d, e.weight]);
   }
   if (pts.length < 3) return null;
-  const n = pts.length;
-  const mx = pts.reduce((s, p) => s + p[0], 0) / n;
-  const my = pts.reduce((s, p) => s + p[1], 0) / n;
-  const denom = pts.reduce((s, p) => s + (p[0] - mx) ** 2, 0);
+
+  // Exponentiellt viktad minsta-kvadrat: nyare mätningar väger tyngre
+  // (halveringstid ≈ 1 vecka), så prognosen följer din nuvarande takt
+  // utan att ryckas med av enstaka avvikande dagar.
+  const TAU = 7; // dagar
+  let sw = 0, swx = 0, swy = 0;
+  for (const [x, y] of pts) {
+    const w = Math.exp(-(todayNum - x) / TAU);
+    sw += w; swx += w * x; swy += w * y;
+  }
+  const mx = swx / sw, my = swy / sw;
+  let denom = 0, num = 0;
+  for (const [x, y] of pts) {
+    const w = Math.exp(-(todayNum - x) / TAU);
+    denom += w * (x - mx) ** 2;
+    num += w * (x - mx) * (y - my);
+  }
   if (denom === 0) return null;
-  const perDay = pts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0) / denom;
+  const perDay = num / denom;
   const todayValue = my + perDay * (todayNum - mx);
-  const last = latestWeight();
+
+  // Ankra den ritade prognosen i trendens (utjämnade) värde vid senaste
+  // mätdagen — inte i den råa sista punkten, som kan vara en dagsavvikelse.
+  const lastRaw = latestWeight();
+  const last = lastRaw
+    ? { date: lastRaw.date, weight: my + perDay * (day(lastRaw.date) - mx) }
+    : null;
 
   let reachDate = null;
   if (typeof targetWeight === 'number' && Math.abs(perDay) > 0.001) {
