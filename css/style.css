@@ -348,6 +348,12 @@ h2 {
 .chart-plan-label { fill: var(--goal-line); }
 .chart-forecast-label { fill: var(--muted); }
 
+.chart-vline-plan { stroke: var(--goal-line); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.chart-vline-forecast { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 2 5; }
+.chart-vline-label { font-size: 10px; font-weight: 700; font-family: inherit; }
+.chart-vline-plan-label { fill: var(--goal-line); }
+.chart-vline-forecast-label { fill: var(--muted); }
+
 .chart-wrap { position: relative; }
 .chart-svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
 .chart-empty { color: var(--muted); font-size: 13px; padding: 24px 4px; margin: 0; }

@@ -182,17 +182,27 @@ function weightExtras(rangeDays) {
     return store.todayKey(d);
   };
   const out = {
-    overlays: [], extendToDate: undefined, status: null, statusClass: '',
-    goal: typeof tgtW === 'number' ? tgtW : undefined,
+    overlays: [], vlines: [], extendToDate: undefined, status: null,
+    statusClass: '', goal: typeof tgtW === 'number' ? tgtW : undefined,
   };
   const fc = store.weightForecast(tgtW);
-  const viewStart = addDays(todayK, -(rangeDays - 1));
+
+  // Diagrammet börjar vid dietens startdatum om det ryms inom vald period
+  let effRange = rangeDays;
+  if (g.dietStartDate) {
+    const since = day(todayK) - day(g.dietStartDate) + 1;
+    if (since >= 2 && since < rangeDays) effRange = since;
+  }
+  out.effRange = effRange;
+  const viewStart = addDays(todayK, -(effRange - 1));
 
   // Framtidsfönster: fram till måldatum/prognosdatum, men max lika långt som perioden
   let futureEnd = null;
   const wantEnd = (tgtD && day(tgtD) > day(todayK)) ? tgtD
     : (fc?.reachDate && day(fc.reachDate) > day(todayK)) ? fc.reachDate : null;
   if (wantEnd) {
+    // Begränsa framtiden med den valda perioden (inte dietfönstret),
+    // så att måldatumet får plats även kort efter dietstart
     futureEnd = (day(wantEnd) - day(todayK) <= rangeDays) ? wantEnd : addDays(todayK, rangeDays);
     out.extendToDate = futureEnd;
   }
@@ -211,20 +221,33 @@ function weightExtras(rangeDays) {
         points: [{ date: a, value: valAt(a) }, { date: b, value: valAt(b) }],
         className: 'chart-plan', label: 'Plan',
       });
-      out.goal = undefined; // planlinjen ersätter den horisontella mållinjen
     }
   }
 
-  // Prognoslinje: trenden utdragen från senaste mätningen
+  // Prognoslinje: trenden utdragen från senaste mätningen,
+  // men aldrig förbi målvikten (stannar vid prognosdatumet)
   if (fc && fc.lastPoint && futureEnd && day(futureEnd) > day(fc.lastPoint.date)) {
-    const days = day(futureEnd) - day(fc.lastPoint.date);
+    let fEnd = futureEnd;
+    if (fc.reachDate && day(fc.reachDate) < day(fEnd) &&
+        day(fc.reachDate) > day(fc.lastPoint.date)) {
+      fEnd = fc.reachDate;
+    }
+    const days = day(fEnd) - day(fc.lastPoint.date);
     out.overlays.push({
       points: [
         { date: fc.lastPoint.date, value: fc.lastPoint.weight },
-        { date: futureEnd, value: fc.lastPoint.weight + fc.perDay * days },
+        { date: fEnd, value: fc.lastPoint.weight + fc.perDay * days },
       ],
       className: 'chart-forecast', label: 'Prognos',
     });
+  }
+
+  // Vertikala referenslinjer: satt måldatum + prognostiserat måldatum
+  const fmtV = k => new Date(k + 'T12:00:00')
+    .toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  if (tgtD) out.vlines.push({ date: tgtD, className: 'chart-vline-plan', label: fmtV(tgtD) });
+  if (fc?.reachDate && fc.reachDate !== tgtD) {
+    out.vlines.push({ date: fc.reachDate, className: 'chart-vline-forecast', label: fmtV(fc.reachDate) });
   }
 
   // Statusrad
@@ -269,13 +292,17 @@ function renderTrends() {
       st.textContent = extra.status || '';
       st.className = `chart-status ${extra.statusClass}`;
     }
+    const effRange = extra?.effRange ?? trendRange;
+    const chartData = extra && effRange !== trendRange
+      ? store.series(c.metric, effRange) : data;
     renderChart(card, {
-      type: c.type, data, unit: c.unit, color: c.color, decimals: c.decimals,
+      type: c.type, data: chartData, unit: c.unit, color: c.color, decimals: c.decimals,
       goal: extra ? extra.goal
         : (typeof goals[c.goalKey] === 'number' ? goals[c.goalKey] : undefined),
-      goalLabel: c.goalLabel, rangeDays: trendRange,
+      goalLabel: c.goalLabel, rangeDays: effRange,
       overlays: extra?.overlays, extendToDate: extra?.extendToDate,
-      ariaLabel: `${c.title}, senaste ${trendRange} dagarna`,
+      vlines: extra?.vlines,
+      ariaLabel: `${c.title}, senaste ${effRange} dagarna`,
     });
   }
 }

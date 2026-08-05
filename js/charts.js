@@ -45,12 +45,13 @@ function dayNumber(dateKey) {
  * opts: { type: 'line'|'column', data: [{date, value}], goal, goalLabel,
  *         unit, color (css-varnamn), decimals, rangeDays,
  *         extendToDate — dra ut x-axeln in i framtiden till detta datum,
- *         overlays — [{points: [{date, value}], className, label}] }
+ *         overlays — [{points: [{date, value}], className, label}],
+ *         vlines — [{date, className, label}] vertikala referenslinjer }
  */
 export function renderChart(container, opts) {
   container.textContent = '';
   const { type, data, goal, unit = '', decimals = 1, rangeDays,
-          extendToDate, overlays = [] } = opts;
+          extendToDate, overlays = [], vlines = [] } = opts;
   const colorVar = `var(${opts.color})`;
 
   if (!data.length) {
@@ -123,6 +124,26 @@ export function renderChart(container, opts) {
     });
     gl.textContent = opts.goalLabel || 'Mål';
     svg.appendChild(gl);
+  }
+
+  // Vertikala referenslinjer (måldatum/prognosdatum) — bara om de ryms
+  for (const v of vlines) {
+    const d = dayNumber(v.date);
+    if (d < dayStart || d > dayEnd) continue;
+    const vx = x(v.date);
+    svg.appendChild(el('line', {
+      x1: vx, x2: vx, y1: M.top, y2: M.top + ih, class: v.className,
+    }));
+    if (v.label) {
+      const nearRight = vx > M.left + iw - 46;
+      const t = el('text', {
+        x: nearRight ? vx - 4 : vx + 4, y: M.top + 9,
+        class: `chart-vline-label ${v.className}-label`,
+        'text-anchor': nearRight ? 'end' : 'start',
+      });
+      t.textContent = v.label;
+      svg.appendChild(t);
+    }
   }
 
   // Overlay-linjer (plan/prognos) — bakom dataserien
