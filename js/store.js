@@ -5,6 +5,7 @@ export const DEFAULT_GOALS = {
   weightTarget: null,   // kg (valfritt)
   weightTargetDate: null, // "YYYY-MM-DD" — när målvikten ska vara nådd
   weightPlanStart: null,  // {date, weight} — snapshot när måldatumet sattes
+  dietStartDate: null,    // "YYYY-MM-DD" — vikter före detta ignoreras i trenden
   fastingHours: 16,     // timmar fasta per dygn
   exerciseMin: 30,      // minuter träning per dag
   sleepHours: 7.5,      // timmar sömn per natt
@@ -168,16 +169,20 @@ export function latestWeight() {
 }
 
 /* Viktprognos: minsta-kvadrat-trend över senaste 30 dagarnas vikter.
+   Är ett dietstartdatum satt ignoreras vikter före det, så att t.ex.
+   en uppgång innan dieten inte drar prognosen åt fel håll.
    → { perDay, todayValue, lastPoint, reachDate } eller null vid för lite data.
    reachDate = beräknat datum då targetWeight nås (null om trenden pekar fel). */
 export function weightForecast(targetWeight) {
   const day = k => Math.round(new Date(k + 'T12:00:00').getTime() / 86400000);
   const todayNum = day(todayKey());
+  const dietStart = state.goals.dietStartDate ? day(state.goals.dietStartDate) : -Infinity;
+  const windowStart = Math.max(todayNum - 30, dietStart);
   const pts = [];
   for (const [k, e] of Object.entries(state.entries)) {
     if (typeof e.weight !== 'number') continue;
     const d = day(k);
-    if (todayNum - d <= 30 && d <= todayNum) pts.push([d, e.weight]);
+    if (d >= windowStart && d <= todayNum) pts.push([d, e.weight]);
   }
   if (pts.length < 3) return null;
   const n = pts.length;

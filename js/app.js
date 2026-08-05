@@ -615,6 +615,7 @@ function renderSettings() {
   const sv = v => (v === undefined || v === null) ? '' : String(v).replace('.', ',');
   $('#goal-weight').value = sv(g.weightTarget);
   $('#goal-weight-date').value = g.weightTargetDate || '';
+  $('#goal-diet-start').value = g.dietStartDate || '';
   $('#goal-fasting').value = sv(g.fastingHours);
   $('#goal-exercise').value = g.exerciseMin;
   $('#goal-sleep').value = sv(g.sleepHours);
@@ -634,6 +635,11 @@ function bindSettings() {
       weightPlanStart: v && lw ? { date: store.todayKey(), weight: lw.weight } : null,
     });
     toast(v ? 'Måldatum satt — planen utgår från din senaste vikt' : 'Måldatum borttaget');
+  });
+  $('#goal-diet-start').addEventListener('change', ev => {
+    const v = ev.target.value || null;
+    store.setGoals({ dietStartDate: v });
+    toast(v ? 'Startdatum satt — trenden räknas från dietstarten' : 'Startdatum borttaget');
   });
   $('#goal-fasting').addEventListener('change', ev => store.setGoals({ fastingHours: num(ev.target) ?? 16 }));
   $('#goal-exercise').addEventListener('change', ev => store.setGoals({ exerciseMin: num(ev.target) ?? 30 }));
