@@ -637,6 +637,26 @@ h2 {
   background: var(--accent-soft);
 }
 
+/* ---------- Uppdateringsbanner ---------- */
+.update-banner {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  max-width: 90vw;
+  z-index: 15;
+}
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
