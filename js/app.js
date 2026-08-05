@@ -676,6 +676,53 @@ function bindSettings() {
   });
 }
 
+/* ---------- Appuppdatering ----------
+   Varje deploy stämplar version.json med commit-SHA:n. Appen minns
+   versionen den startade med och kollar efter ny varje gång den öppnas
+   (visibilitychange fångar hemskärms-appen på iOS). Vid uppdatering
+   rensas offline-cachen och sidan laddas om. */
+let bootVersion = null;
+
+async function fetchVersion() {
+  try {
+    const r = await fetch('version.json', { cache: 'no-store' });
+    if (!r.ok) return null;
+    return (await r.json()).version || null;
+  } catch { return null; }
+}
+
+async function checkForUpdate() {
+  const v = await fetchVersion();
+  if (!v) return;
+  if (!bootVersion) { bootVersion = v; return; }
+  if (v !== bootVersion) $('#update-banner').hidden = false;
+}
+
+async function applyUpdate() {
+  toast('Hämtar senaste versionen …');
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if (navigator.serviceWorker) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.update().catch(() => {})));
+    }
+  } catch { /* omladdningen hämtar ändå färskt via nätet-först */ }
+  location.reload();
+}
+
+function bindUpdates() {
+  $('#update-banner').addEventListener('click', applyUpdate);
+  $('#btn-reload').addEventListener('click', applyUpdate);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForUpdate();
+  });
+  checkForUpdate();
+  setInterval(checkForUpdate, 30 * 60 * 1000);
+}
+
 /* ---------- Toast ---------- */
 let toastTimer;
 function toast(msg, isError = false) {
@@ -708,6 +755,7 @@ function init() {
   bindAccount();
   bindMeals();
   bindCalendar();
+  bindUpdates();
 
   // Inloggningsläget avgörs direkt (sparad session), full synk går i bakgrunden
   sync.initSync(() => {

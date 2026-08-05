@@ -265,6 +265,8 @@
 
     <h2>Data</h2>
     <div class="card form-card">
+      <button id="btn-reload" class="btn btn-secondary">🔄 Ladda om appen
+        (hämta senaste versionen)</button>
       <p class="hint">All data sparas lokalt i din webbläsare. Ta en backup då
         och då — och innan du byter telefon.</p>
       <button id="btn-export" class="btn">Ladda ner backup (JSON)</button>
@@ -294,6 +296,9 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/></svg>
     Mer</button>
 </nav>
+
+<button id="update-banner" class="update-banner" hidden>
+  🔄 Ny version finns — tryck för att uppdatera</button>
 
 <div id="toast" class="toast" role="status"></div>
 
