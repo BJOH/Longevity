@@ -74,6 +74,18 @@ body {
   background: var(--page);
   color: var(--ink);
   padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  /* App-känsla: långtryck ska inte starta textmarkering (t.ex. när man
+     håller fingret på en diagrampunkt för att se detaljer på iOS) */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Inmatningsfält ska förstås gå att markera och redigera som vanligt */
+input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .app-header {
