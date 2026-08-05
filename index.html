@@ -129,6 +129,7 @@
 
     <div class="card chart-card">
       <div class="card-head"><h2>Vikt</h2><span class="card-value">–</span></div>
+      <p id="weight-status" class="chart-status" hidden></p>
       <div id="chart-weight"></div>
     </div>
     <div class="card chart-card">
@@ -216,6 +217,12 @@
           <input id="goal-fasting" type="text" inputmode="decimal" autocomplete="off">
         </label>
       </div>
+      <label>🎯 Måldatum för målvikt
+        <input id="goal-weight-date" type="date">
+      </label>
+      <p class="hint">Sätt ett datum så ritas en planlinje i viktdiagrammet
+        från din nuvarande vikt till målvikten — och prognosen visar om du
+        ligger före eller efter plan.</p>
       <div class="row">
         <label>Träning (min/dag)
           <input id="goal-exercise" type="number" inputmode="numeric" min="0">

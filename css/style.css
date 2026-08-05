@@ -219,7 +219,8 @@ h2 {
 
 /* iOS Safari specialrenderar tidsfält: utan detta ignorerar de kolumn-
    bredden och flyter in i grannfältet, och tomma fält kollapsar i höjd. */
-.form-card input[type="time"] {
+.form-card input[type="time"],
+.form-card input[type="date"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -227,7 +228,8 @@ h2 {
   min-height: 49px;
   text-align: left;
 }
-.form-card input[type="time"]::-webkit-date-and-time-value {
+.form-card input[type="time"]::-webkit-date-and-time-value,
+.form-card input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
   min-height: 1.3em;
   margin: 0;
@@ -325,6 +327,26 @@ h2 {
   letter-spacing: -0.02em;
   color: var(--ink);
 }
+
+.chart-status {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.chart-status.is-good { color: var(--good); }
+.chart-status.is-bad { color: var(--danger); }
+
+.chart-plan { stroke: var(--goal-line); stroke-width: 2; stroke-dasharray: 7 5; }
+.chart-forecast {
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-dasharray: 2 6;
+  stroke-linecap: round;
+}
+.chart-overlay-label { font-size: 10px; font-weight: 700; font-family: inherit; }
+.chart-plan-label { fill: var(--goal-line); }
+.chart-forecast-label { fill: var(--muted); }
 
 .chart-wrap { position: relative; }
 .chart-svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
