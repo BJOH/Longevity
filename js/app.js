@@ -170,6 +170,88 @@ const CHARTS = [
     color: '--chart-line', decimals: 0, goalKey: 'steps', goalLabel: 'Mål' },
 ];
 
+/* Viktmålets plan- och prognoslinjer + statusrad ("on track?"). */
+function weightExtras(rangeDays) {
+  const g = store.getGoals();
+  const tgtW = g.weightTarget;
+  const tgtD = g.weightTargetDate;
+  const todayK = store.todayKey();
+  const day = k => Math.round(new Date(k + 'T12:00:00').getTime() / 86400000);
+  const addDays = (k, n) => {
+    const d = new Date(k + 'T12:00:00'); d.setDate(d.getDate() + n);
+    return store.todayKey(d);
+  };
+  const out = {
+    overlays: [], extendToDate: undefined, status: null, statusClass: '',
+    goal: typeof tgtW === 'number' ? tgtW : undefined,
+  };
+  const fc = store.weightForecast(tgtW);
+  const viewStart = addDays(todayK, -(rangeDays - 1));
+
+  // Framtidsfönster: fram till måldatum/prognosdatum, men max lika långt som perioden
+  let futureEnd = null;
+  const wantEnd = (tgtD && day(tgtD) > day(todayK)) ? tgtD
+    : (fc?.reachDate && day(fc.reachDate) > day(todayK)) ? fc.reachDate : null;
+  if (wantEnd) {
+    futureEnd = (day(wantEnd) - day(todayK) <= rangeDays) ? wantEnd : addDays(todayK, rangeDays);
+    out.extendToDate = futureEnd;
+  }
+
+  // Planlinje: startvikt (när måldatumet sattes) → målvikt vid måldatumet
+  const ps = g.weightPlanStart;
+  if (typeof tgtW === 'number' && tgtD && ps &&
+      typeof ps.weight === 'number' && day(tgtD) > day(ps.date)) {
+    const valAt = k => ps.weight +
+      (tgtW - ps.weight) * (day(k) - day(ps.date)) / (day(tgtD) - day(ps.date));
+    const a = day(ps.date) >= day(viewStart) ? ps.date : viewStart;
+    const bCap = futureEnd || todayK;
+    const b = day(tgtD) <= day(bCap) ? tgtD : bCap;
+    if (day(b) > day(a)) {
+      out.overlays.push({
+        points: [{ date: a, value: valAt(a) }, { date: b, value: valAt(b) }],
+        className: 'chart-plan', label: 'Plan',
+      });
+      out.goal = undefined; // planlinjen ersätter den horisontella mållinjen
+    }
+  }
+
+  // Prognoslinje: trenden utdragen från senaste mätningen
+  if (fc && fc.lastPoint && futureEnd && day(futureEnd) > day(fc.lastPoint.date)) {
+    const days = day(futureEnd) - day(fc.lastPoint.date);
+    out.overlays.push({
+      points: [
+        { date: fc.lastPoint.date, value: fc.lastPoint.weight },
+        { date: futureEnd, value: fc.lastPoint.weight + fc.perDay * days },
+      ],
+      className: 'chart-forecast', label: 'Prognos',
+    });
+  }
+
+  // Statusrad
+  const fmtD = k => new Date(k + 'T12:00:00')
+    .toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  if (typeof tgtW === 'number' && fc) {
+    if (fc.reachDate) {
+      let s = `Prognos: ${tgtW.toLocaleString('sv-SE')} kg nås ≈ ${fmtD(fc.reachDate)}`;
+      if (tgtD) {
+        const diff = day(fc.reachDate) - day(tgtD);
+        if (diff === 0) { s += ' · i fas med planen ✓'; out.statusClass = 'is-good'; }
+        else if (diff < 0) { s += ` · ${-diff} dgr före plan ✓`; out.statusClass = 'is-good'; }
+        else { s += ` · ${diff} dgr efter plan`; out.statusClass = 'is-bad'; }
+      }
+      out.status = s;
+    } else if (Math.abs(fc.perDay) <= 0.001) {
+      out.status = 'Vikten ligger stilla — ingen prognos ännu';
+    } else {
+      out.status = 'Trenden pekar bort från målet just nu';
+      out.statusClass = 'is-bad';
+    }
+  } else if (typeof tgtW === 'number') {
+    out.status = 'Logga vikt några dagar till för att få en prognos';
+  }
+  return out;
+}
+
 function renderTrends() {
   $$('#range-row button').forEach(b =>
     b.classList.toggle('is-active', Number(b.dataset.days) === trendRange));
@@ -180,10 +262,19 @@ function renderTrends() {
     const latest = data.length ? data[data.length - 1].value : null;
     $('.card-value', card.closest('.card')).textContent = latest !== null
       ? `${latest.toLocaleString('sv-SE')} ${c.unit}` : '–';
+    const extra = c.metric === 'weight' ? weightExtras(trendRange) : null;
+    if (extra) {
+      const st = $('#weight-status');
+      st.hidden = !extra.status;
+      st.textContent = extra.status || '';
+      st.className = `chart-status ${extra.statusClass}`;
+    }
     renderChart(card, {
       type: c.type, data, unit: c.unit, color: c.color, decimals: c.decimals,
-      goal: typeof goals[c.goalKey] === 'number' ? goals[c.goalKey] : undefined,
+      goal: extra ? extra.goal
+        : (typeof goals[c.goalKey] === 'number' ? goals[c.goalKey] : undefined),
       goalLabel: c.goalLabel, rangeDays: trendRange,
+      overlays: extra?.overlays, extendToDate: extra?.extendToDate,
       ariaLabel: `${c.title}, senaste ${trendRange} dagarna`,
     });
   }
@@ -523,6 +614,7 @@ function renderSettings() {
   const g = store.getGoals();
   const sv = v => (v === undefined || v === null) ? '' : String(v).replace('.', ',');
   $('#goal-weight').value = sv(g.weightTarget);
+  $('#goal-weight-date').value = g.weightTargetDate || '';
   $('#goal-fasting').value = sv(g.fastingHours);
   $('#goal-exercise').value = g.exerciseMin;
   $('#goal-sleep').value = sv(g.sleepHours);
@@ -534,6 +626,15 @@ function renderSettings() {
 function bindSettings() {
   const num = el => { const v = parseFloat(el.value.replace(',', '.')); return isFinite(v) ? v : null; };
   $('#goal-weight').addEventListener('change', ev => store.setGoals({ weightTarget: num(ev.target) }));
+  $('#goal-weight-date').addEventListener('change', ev => {
+    const v = ev.target.value || null;
+    const lw = store.latestWeight();
+    store.setGoals({
+      weightTargetDate: v,
+      weightPlanStart: v && lw ? { date: store.todayKey(), weight: lw.weight } : null,
+    });
+    toast(v ? 'Måldatum satt — planen utgår från din senaste vikt' : 'Måldatum borttaget');
+  });
   $('#goal-fasting').addEventListener('change', ev => store.setGoals({ fastingHours: num(ev.target) ?? 16 }));
   $('#goal-exercise').addEventListener('change', ev => store.setGoals({ exerciseMin: num(ev.target) ?? 30 }));
   $('#goal-sleep').addEventListener('change', ev => store.setGoals({ sleepHours: num(ev.target) ?? 7.5 }));

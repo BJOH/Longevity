@@ -3,6 +3,8 @@ const STORAGE_KEY = 'longevity.v1';
 
 export const DEFAULT_GOALS = {
   weightTarget: null,   // kg (valfritt)
+  weightTargetDate: null, // "YYYY-MM-DD" — när målvikten ska vara nådd
+  weightPlanStart: null,  // {date, weight} — snapshot när måldatumet sattes
   fastingHours: 16,     // timmar fasta per dygn
   exerciseMin: 30,      // minuter träning per dag
   sleepHours: 7.5,      // timmar sömn per natt
@@ -154,6 +156,49 @@ export function series(metric, days) {
 export function allEntriesSorted() {
   return Object.keys(state.entries).sort().reverse()
     .map(k => ({ date: k, ...state.entries[k] }));
+}
+
+/* Senast loggade vikt. */
+export function latestWeight() {
+  for (const k of Object.keys(state.entries).sort().reverse()) {
+    const w = state.entries[k].weight;
+    if (typeof w === 'number') return { date: k, weight: w };
+  }
+  return null;
+}
+
+/* Viktprognos: minsta-kvadrat-trend över senaste 30 dagarnas vikter.
+   → { perDay, todayValue, lastPoint, reachDate } eller null vid för lite data.
+   reachDate = beräknat datum då targetWeight nås (null om trenden pekar fel). */
+export function weightForecast(targetWeight) {
+  const day = k => Math.round(new Date(k + 'T12:00:00').getTime() / 86400000);
+  const todayNum = day(todayKey());
+  const pts = [];
+  for (const [k, e] of Object.entries(state.entries)) {
+    if (typeof e.weight !== 'number') continue;
+    const d = day(k);
+    if (todayNum - d <= 30 && d <= todayNum) pts.push([d, e.weight]);
+  }
+  if (pts.length < 3) return null;
+  const n = pts.length;
+  const mx = pts.reduce((s, p) => s + p[0], 0) / n;
+  const my = pts.reduce((s, p) => s + p[1], 0) / n;
+  const denom = pts.reduce((s, p) => s + (p[0] - mx) ** 2, 0);
+  if (denom === 0) return null;
+  const perDay = pts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0) / denom;
+  const todayValue = my + perDay * (todayNum - mx);
+  const last = latestWeight();
+
+  let reachDate = null;
+  if (typeof targetWeight === 'number' && Math.abs(perDay) > 0.001) {
+    const days = (targetWeight - todayValue) / perDay;
+    if (days >= 0 && days < 3650) {
+      const d = new Date();
+      d.setDate(d.getDate() + Math.round(days));
+      reachDate = todayKey(d);
+    }
+  }
+  return { perDay, todayValue, lastPoint: last, reachDate };
 }
 
 /* Målstatus för en dag → [{key, label, done, detail}] */

@@ -43,11 +43,14 @@ function dayNumber(dateKey) {
 /**
  * Ritar ett diagram i `container`.
  * opts: { type: 'line'|'column', data: [{date, value}], goal, goalLabel,
- *         unit, color (css-varnamn t.ex. '--c-weight'), decimals, rangeDays }
+ *         unit, color (css-varnamn), decimals, rangeDays,
+ *         extendToDate — dra ut x-axeln in i framtiden till detta datum,
+ *         overlays — [{points: [{date, value}], className, label}] }
  */
 export function renderChart(container, opts) {
   container.textContent = '';
-  const { type, data, goal, unit = '', decimals = 1, rangeDays } = opts;
+  const { type, data, goal, unit = '', decimals = 1, rangeDays,
+          extendToDate, overlays = [] } = opts;
   const colorVar = `var(${opts.color})`;
 
   if (!data.length) {
@@ -62,7 +65,8 @@ export function renderChart(container, opts) {
   const M = { top: 14, right: 52, bottom: 26, left: 40 };
   const iw = W - M.left - M.right, ih = H - M.top - M.bottom;
 
-  const values = data.map(d => d.value);
+  const values = data.map(d => d.value)
+    .concat(overlays.flatMap(o => o.points.map(p => p.value)));
   let vMin = Math.min(...values, goal ?? Infinity);
   let vMax = Math.max(...values, goal ?? -Infinity);
   if (type === 'column') vMin = 0;
@@ -73,8 +77,11 @@ export function renderChart(container, opts) {
   const ticks = niceTicks(vMin, vMax, 4);
   vMin = ticks[0]; vMax = ticks[ticks.length - 1];
 
-  const dayEnd = dayNumber(data[data.length - 1].date);
-  const dayStart = rangeDays ? dayEnd - (rangeDays - 1) : dayNumber(data[0].date);
+  const dayEnd = Math.max(
+    dayNumber(data[data.length - 1].date),
+    extendToDate ? dayNumber(extendToDate) : -Infinity);
+  const dataEnd = dayNumber(data[data.length - 1].date);
+  const dayStart = rangeDays ? dataEnd - (rangeDays - 1) : dayNumber(data[0].date);
   const daySpan = Math.max(dayEnd - dayStart, 1);
 
   const x = key => M.left + ((dayNumber(key) - dayStart) / daySpan) * iw;
@@ -96,13 +103,15 @@ export function renderChart(container, opts) {
     svg.appendChild(lbl);
   }
 
-  // X-etiketter: första och sista datum i perioden
+  // X-etiketter: första datum och axelns slut (kan ligga i framtiden)
+  const endLabelDate = extendToDate && dayNumber(extendToDate) > dataEnd
+    ? extendToDate : data[data.length - 1].date;
   const xl1 = el('text', { x: M.left, y: H - 6, class: 'chart-tick', 'text-anchor': 'start' });
   xl1.textContent = shortDate(data[0].date);
   const xl2 = el('text', { x: M.left + iw, y: H - 6, class: 'chart-tick', 'text-anchor': 'end' });
-  xl2.textContent = shortDate(data[data.length - 1].date);
+  xl2.textContent = shortDate(endLabelDate);
   svg.appendChild(xl1);
-  if (data.length > 1) svg.appendChild(xl2);
+  if (data.length > 1 || endLabelDate !== data[0].date) svg.appendChild(xl2);
 
   // Mållinje (referens, inte gridlinje)
   if (typeof goal === 'number' && goal >= vMin && goal <= vMax) {
@@ -114,6 +123,24 @@ export function renderChart(container, opts) {
     });
     gl.textContent = opts.goalLabel || 'Mål';
     svg.appendChild(gl);
+  }
+
+  // Overlay-linjer (plan/prognos) — bakom dataserien
+  for (const o of overlays) {
+    if (o.points.length < 2) continue;
+    const d = o.points
+      .map((p, i) => `${i ? 'L' : 'M'}${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`)
+      .join('');
+    svg.appendChild(el('path', { d, class: o.className, fill: 'none' }));
+    if (o.label) {
+      const lp = o.points[o.points.length - 1];
+      const t = el('text', {
+        x: Math.min(x(lp.date), M.left + iw) + 4, y: y(lp.value) + 3.5,
+        class: `chart-overlay-label ${o.className}-label`, 'text-anchor': 'start',
+      });
+      t.textContent = o.label;
+      svg.appendChild(t);
+    }
   }
 
   const hoverTargets = []; // {cx, item, markEl}
