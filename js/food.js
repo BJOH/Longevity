@@ -438,17 +438,30 @@ async function startScanner() {
   $('#btn-scan-start').hidden = true;
   try {
     const zx = await import('./vendor/zxing.js');
-    const hints = new Map([[zx.DecodeHintType.POSSIBLE_FORMATS, [
-      zx.BarcodeFormat.EAN_13, zx.BarcodeFormat.EAN_8,
-      zx.BarcodeFormat.UPC_A, zx.BarcodeFormat.UPC_E,
-    ]]]);
+    const hints = new Map([
+      [zx.DecodeHintType.POSSIBLE_FORMATS, [
+        zx.BarcodeFormat.EAN_13, zx.BarcodeFormat.EAN_8,
+        zx.BarcodeFormat.UPC_A, zx.BarcodeFormat.UPC_E,
+      ]],
+      // Avkoda mer noggrant — hjälper suddiga/små koder på håll
+      [zx.DecodeHintType.TRY_HARDER, true],
+    ]);
     const reader = new zx.BrowserMultiFormatReader(hints);
     const video = $('#scan-video');
     video.hidden = false;
-    scanControls = await reader.decodeFromVideoDevice(undefined, video, (result) => {
+    // Hög upplösning gör att koden kan läsas på längre avstånd
+    scanControls = await reader.decodeFromConstraints({
+      audio: false,
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      },
+    }, video, (result) => {
       if (result) handleBarcode(result.getText());
     });
     status.textContent = 'Rikta kameran mot streckkoden.';
+    tuneCamera(video);
   } catch (err) {
     status.textContent = err?.name === 'NotAllowedError'
       ? 'Kameran nekades — tillåt kameraåtkomst i webbläsarens inställningar.'
@@ -457,10 +470,37 @@ async function startScanner() {
   }
 }
 
+/* Kontinuerlig autofokus + zoomknappar när kameran stödjer det.
+   Zoom är rätt verktyg nära: mobilkameror kan inte fokusera under ~10 cm,
+   men 2–3× zoom ger samma effekt på lite längre (skarpt) avstånd. */
+function tuneCamera(video) {
+  const track = video.srcObject?.getVideoTracks?.()[0];
+  const zoomRow = $('#scan-zoom');
+  zoomRow.hidden = true;
+  if (!track?.getCapabilities) return;
+  const caps = track.getCapabilities();
+  if (Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')) {
+    track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+  }
+  if (caps.zoom && caps.zoom.max > 1) {
+    zoomRow.hidden = false;
+    $$('#scan-zoom button').forEach(b => {
+      const z = Number(b.dataset.zoom);
+      b.hidden = z > caps.zoom.max;
+      b.onclick = () => {
+        track.applyConstraints({ advanced: [{ zoom: Math.min(z, caps.zoom.max) }] }).catch(() => {});
+        $$('#scan-zoom button').forEach(x => x.classList.toggle('is-active', x === b));
+      };
+    });
+  }
+}
+
 function stopScanner() {
   if (scanControls) { try { scanControls.stop(); } catch {} scanControls = null; }
   const video = $('#scan-video');
   if (video) { video.hidden = true; }
+  const zoomRow = $('#scan-zoom');
+  if (zoomRow) zoomRow.hidden = true;
   const btn = $('#btn-scan-start');
   if (btn) btn.hidden = false;
 }
@@ -636,8 +676,8 @@ function bindSheet() {
   // Streckkod
   $('#btn-scan-start').addEventListener('click', () => { lastCode = null; startScanner(); });
 
-  // Foto
-  $('#photo-input').addEventListener('change', async ev => {
+  // Foto: ta ny bild eller välj från biblioteket — samma analys
+  const handlePhoto = async ev => {
     const file = ev.target.files[0];
     ev.target.value = '';
     if (!file) return;
@@ -651,7 +691,9 @@ function bindSheet() {
     } catch {
       status.textContent = 'Kunde inte läsa bilden.';
     }
-  });
+  };
+  $('#photo-input').addEventListener('change', handlePhoto);
+  $('#photo-pick').addEventListener('change', handlePhoto);
 
   // Snabbt (fritext)
   $('#btn-quick-analyze').addEventListener('click', () => {

@@ -392,6 +392,7 @@ async function renderMealsWeek() {
   const todayK = store.todayKey();
   for (const d of days) {
     const dateKey = store.todayKey(d);
+    const logged = store.getEntry(dateKey).food || [];
     const card = document.createElement('div');
     card.className = 'card meal-day' + (dateKey === todayK ? ' is-today' : '');
     const head = document.createElement('div');
@@ -402,6 +403,16 @@ async function renderMealsWeek() {
     date.textContent = fmtShort(d);
     head.append(name, date);
     card.appendChild(head);
+
+    // Dagens loggade energi/näring (från matloggen under "Logga dag")
+    if (logged.length) {
+      const t = store.foodTotals(dateKey);
+      const sum = document.createElement('p');
+      sum.className = 'meal-day-total';
+      sum.textContent = `Loggat: ${t.kcal.toLocaleString('sv-SE')} kcal · ` +
+        `P ${Math.round(t.protein)} g · K ${Math.round(t.kolh)} g · F ${Math.round(t.fett)} g`;
+      card.appendChild(sum);
+    }
 
     for (const mt of visibleTypes) {
       const shared = prefs[mt.key]?.shared !== false;
@@ -430,6 +441,17 @@ async function renderMealsWeek() {
         : (meal?.created_by && meal.created_by !== myId ? nameOf(meal.created_by) : '');
       row.append(lbl, input, by);
       card.appendChild(row);
+
+      // Det jag faktiskt loggade på den här måltiden (min egen matlogg)
+      const slotLogged = logged.filter(f => f.meal === mt.key);
+      if (slotLogged.length) {
+        const kcal = slotLogged.reduce((s, f) => s + (f.kcal || 0), 0);
+        const line = document.createElement('p');
+        line.className = 'meal-logged';
+        line.textContent = `✓ ${Math.round(kcal).toLocaleString('sv-SE')} kcal · ` +
+          slotLogged.map(f => f.namn).join(', ');
+        card.appendChild(line);
+      }
       requestAnimationFrame(() => autoGrow(input));
     }
     container.appendChild(card);

@@ -444,6 +444,11 @@
     <!-- Streckkod -->
     <div class="food-panel" data-tab="scan" hidden>
       <video id="scan-video" class="scan-video" playsinline hidden></video>
+      <div id="scan-zoom" class="zoom-row" role="group" aria-label="Zoom" hidden>
+        <button data-zoom="1">1×</button>
+        <button data-zoom="2">2×</button>
+        <button data-zoom="3">3×</button>
+      </div>
       <button id="btn-scan-start" class="btn">📷 Starta kameran</button>
       <p id="scan-status" class="hint" role="status"></p>
       <button id="btn-scan-create" class="btn btn-secondary" hidden>
@@ -454,9 +459,14 @@
 
     <!-- Foto -->
     <div class="food-panel" data-tab="photo" hidden>
-      <label class="btn photo-label">📷 Ta en bild på maten
-        <input id="photo-input" type="file" accept="image/*" capture="environment" hidden>
-      </label>
+      <div class="row">
+        <label class="btn photo-label">📷 Ta en bild
+          <input id="photo-input" type="file" accept="image/*" capture="environment" hidden>
+        </label>
+        <label class="btn btn-secondary photo-label">🖼 Välj bild
+          <input id="photo-pick" type="file" accept="image/*" hidden>
+        </label>
+      </div>
       <img id="photo-preview" class="photo-preview" alt="Förhandsvisning" hidden>
       <p id="photo-status" class="hint" role="status"></p>
       <p class="hint">AI:n uppskattar portion, kalorier och näringsfördelning
