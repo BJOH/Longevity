@@ -71,6 +71,7 @@ function toRow(dateKey, e) {
     steps: e.steps ?? null,
     diet_ok: e.dietOk ?? null,
     notes: e.notes || null,
+    food: Array.isArray(e.food) && e.food.length ? e.food : null,
     updated_at: new Date().toISOString(),
   };
 }
@@ -87,6 +88,7 @@ function fromRow(r) {
     steps: r.steps ?? undefined,
     dietOk: r.diet_ok ?? undefined,
     notes: r.notes ?? undefined,
+    food: Array.isArray(r.food) && r.food.length ? r.food : undefined,
   };
   for (const k of Object.keys(e)) if (e[k] === undefined) delete e[k];
   return e;
@@ -164,4 +166,82 @@ export async function deleteMeal(dateKey, mealType, shared) {
     .delete().eq('date', dateKey).eq('meal_type', mealType)
     .eq('owner_key', shared ? SHARED_KEY : user.id);
   if (error) throw error;
+}
+
+/* ---------- Livsmedelsdatabas & matlogg ----------
+   food_db är en snapshot av Livsmedelsverkets livsmedelsdatabas
+   (2 606 livsmedel, värden per 100 g) som söks via en rankad RPC. */
+
+export async function searchFood(q, maxRows = 30) {
+  const { data, error } = await sb.rpc('search_food', { q, max_rows: maxRows });
+  if (error) throw error;
+  return data.map(r => ({
+    id: r.id, namn: r.namn,
+    kcal: num(r.kcal), fett: num(r.fett), kolh: num(r.kolh),
+    protein: num(r.protein), fiber: num(r.fiber),
+    socker: num(r.socker), mattat: num(r.mattat), salt: num(r.salt),
+  }));
+}
+const num = v => (v === null || v === undefined) ? null : Number(v);
+
+/* Egna livsmedel (privata per konto), värden per 100 g */
+export async function listCustomFoods() {
+  const { data, error } = await sb.from('custom_foods')
+    .select('*').order('namn');
+  if (error) throw error;
+  return data;
+}
+
+export async function saveCustomFood(f) {
+  const row = {
+    ...(f.id ? { id: f.id } : {}),
+    user_id: user.id,
+    namn: f.namn, brand: f.brand || null, barcode: f.barcode || null,
+    kcal: f.kcal ?? null, fett: f.fett ?? null, kolh: f.kolh ?? null,
+    protein: f.protein ?? null, fiber: f.fiber ?? null,
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await sb.from('custom_foods')
+    .upsert(row).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCustomFood(id) {
+  const { error } = await sb.from('custom_foods').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/* Streckkod → produkt via Open Food Facts (öppet API, CORS-fritt).
+   Returnerar värden per 100 g eller null om produkten saknas. */
+export async function lookupBarcode(code) {
+  const fields = 'product_name,brands,nutriments,serving_quantity';
+  const r = await fetch(
+    `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${fields}`,
+    { headers: { Accept: 'application/json' } });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`Uppslag misslyckades (${r.status})`);
+  const j = await r.json();
+  if (!j.product) return null;
+  const n = j.product.nutriments || {};
+  const g = k => (typeof n[k] === 'number' ? n[k] : null);
+  return {
+    namn: j.product.product_name || `Produkt ${code}`,
+    brand: (j.product.brands || '').split(',')[0].trim() || null,
+    serving: Number(j.product.serving_quantity) || null,
+    kcal: g('energy-kcal_100g'),
+    fett: g('fat_100g'), kolh: g('carbohydrates_100g'),
+    protein: g('proteins_100g'), fiber: g('fiber_100g'),
+  };
+}
+
+/* AI-analys av matbild/beskrivning via Edge-funktionen analyze-food.
+   Svar: {namn, gram, kcal, fett, kolh, protein, fiber, beskrivning, sakerhet}
+   eller {error: 'saknar_nyckel' | ...}. */
+export async function analyzeFood({ image, mediaType, text }) {
+  const { data, error } = await sb.functions.invoke('analyze-food', {
+    body: { image, mediaType, text },
+  });
+  if (error) throw new Error(error.message || 'Analysen misslyckades');
+  return data;
 }

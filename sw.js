@@ -1,6 +1,6 @@
 /* Enkel offline-cache: appskalet cachas vid installation, nätet först för
    uppdateringar, cache som fallback. Höj CACHE-versionen vid varje release. */
-const CACHE = 'longevity-v2';
+const CACHE = 'longevity-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -12,7 +12,9 @@ const ASSETS = [
   './js/config.js',
   './js/cloud.js',
   './js/sync.js',
+  './js/food.js',
   './js/vendor/supabase-js.js',
+  './js/vendor/zxing.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',

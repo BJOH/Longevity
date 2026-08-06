@@ -11,6 +11,12 @@ export const DEFAULT_GOALS = {
   sleepHours: 7.5,      // timmar sömn per natt
   steps: 8000,          // steg per dag
   rules: '',            // egna regler i punktform (- och --), synkas med målen
+  /* Näringsmål per dag för matloggen (null = inget mål satt) */
+  kcalTarget: null,
+  fettTarget: null,
+  kolhTarget: null,
+  proteinTarget: null,
+  fiberTarget: null,
   /* Per måltidsplats: show = syns i min veckoplan, shared = delas i hushållet
      (annars privat och osynlig för partnern). Synkas med målen. */
   mealPrefs: {
@@ -26,7 +32,9 @@ export const DEFAULT_GOALS = {
 
 /* En dagspost:
    { weight, firstMeal:"HH:MM", lastMeal:"HH:MM", fastingHours,
-     exerciseMin, exerciseType, sleepHours, steps, dietOk, notes } */
+     exerciseMin, exerciseType, sleepHours, steps, dietOk, notes,
+     food: [{id, namn, gram, kcal, fett, kolh, protein, fiber, src, meal}] }
+   food-värdena är totaler för portionen (inte per 100 g). */
 
 let state = load();
 
@@ -92,7 +100,8 @@ export function updateEntry(dateKey, patch) {
   // Rensa tomma fält så exporten hålls ren
   for (const k of Object.keys(next)) {
     if (next[k] === '' || next[k] === null || next[k] === undefined ||
-        (typeof next[k] === 'number' && Number.isNaN(next[k]))) {
+        (typeof next[k] === 'number' && Number.isNaN(next[k])) ||
+        (Array.isArray(next[k]) && next[k].length === 0)) {
       delete next[k];
     }
   }
@@ -224,6 +233,39 @@ export function weightForecast(targetWeight) {
     }
   }
   return { perDay, todayValue, lastPoint: last, reachDate };
+}
+
+/* ---------- Matlogg ---------- */
+
+/* Lägger till ett livsmedel på dagens post. Värdena är portionstotaler. */
+export function addFood(dateKey, item) {
+  const cur = getEntry(dateKey);
+  const food = [...(cur.food || []), {
+    id: item.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+    ...item,
+  }];
+  return updateEntry(dateKey, { food });
+}
+
+export function removeFood(dateKey, id) {
+  const cur = getEntry(dateKey);
+  const food = (cur.food || []).filter(f => f.id !== id);
+  return updateEntry(dateKey, { food });
+}
+
+/* Dagens summerade näringsvärden ur matloggen. */
+export function foodTotals(dateKey) {
+  const sum = { kcal: 0, fett: 0, kolh: 0, protein: 0, fiber: 0, count: 0 };
+  for (const f of getEntry(dateKey).food || []) {
+    sum.count++;
+    for (const k of ['kcal', 'fett', 'kolh', 'protein', 'fiber']) {
+      if (typeof f[k] === 'number' && isFinite(f[k])) sum[k] += f[k];
+    }
+  }
+  for (const k of ['kcal', 'fett', 'kolh', 'protein', 'fiber']) {
+    sum[k] = Math.round(sum[k] * 10) / 10;
+  }
+  return sum;
 }
 
 /* Målstatus för en dag → [{key, label, done, detail}] */

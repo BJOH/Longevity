@@ -3,6 +3,7 @@ import * as cloud from './cloud.js';
 import * as sync from './sync.js';
 import { renderChart } from './charts.js';
 import { parseLogURL } from './import.js';
+import { initFood, renderFoodCard } from './food.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -136,6 +137,9 @@ function renderToday() {
   const rules = store.getGoals().rules || '';
   $('#today-rules-box').hidden = !rules.trim();
   if (rules.trim()) renderRulesInto($('#today-rules'), rules);
+
+  // Matloggen
+  renderFoodCard();
 }
 
 function bindTodayForm() {
@@ -647,6 +651,11 @@ function renderSettings() {
   $('#goal-exercise').value = g.exerciseMin;
   $('#goal-sleep').value = sv(g.sleepHours);
   $('#goal-steps').value = g.steps;
+  $('#goal-kcal').value = g.kcalTarget ?? '';
+  $('#goal-fett').value = g.fettTarget ?? '';
+  $('#goal-kolh').value = g.kolhTarget ?? '';
+  $('#goal-protein').value = g.proteinTarget ?? '';
+  $('#goal-fiber').value = g.fiberTarget ?? '';
   $('#rules-input').value = g.rules || '';
   $('#theme-select').value = g.theme || 'auto';
 }
@@ -672,6 +681,11 @@ function bindSettings() {
   $('#goal-exercise').addEventListener('change', ev => store.setGoals({ exerciseMin: num(ev.target) ?? 30 }));
   $('#goal-sleep').addEventListener('change', ev => store.setGoals({ sleepHours: num(ev.target) ?? 7.5 }));
   $('#goal-steps').addEventListener('change', ev => store.setGoals({ steps: num(ev.target) ?? 8000 }));
+  $('#goal-kcal').addEventListener('change', ev => store.setGoals({ kcalTarget: num(ev.target) }));
+  $('#goal-fett').addEventListener('change', ev => store.setGoals({ fettTarget: num(ev.target) }));
+  $('#goal-kolh').addEventListener('change', ev => store.setGoals({ kolhTarget: num(ev.target) }));
+  $('#goal-protein').addEventListener('change', ev => store.setGoals({ proteinTarget: num(ev.target) }));
+  $('#goal-fiber').addEventListener('change', ev => store.setGoals({ fiberTarget: num(ev.target) }));
   $('#rules-input').addEventListener('change', ev => {
     store.setGoals({ rules: ev.target.value });
     toast('Regler sparade ✓');
@@ -783,6 +797,7 @@ function handleLogURL() {
 function init() {
   applyTheme();
   handleLogURL();
+  initFood({ toast, onChange: () => { if (currentView === 'today') renderToday(); } });
   bindTodayForm();
   bindSettings();
   bindAccount();
