@@ -78,6 +78,17 @@
       <div id="today-rules"></div>
     </details>
 
+    <h2>Mat idag</h2>
+    <div class="card food-card">
+      <div class="food-kcal-row">
+        <strong id="food-kcal">0</strong><span id="food-kcal-target"> kcal</span>
+      </div>
+      <div id="food-rings" class="food-rings"></div>
+      <ul id="food-log-list" class="food-log-list"></ul>
+      <p id="food-empty" class="hint">Inget loggat ännu idag.</p>
+      <button id="btn-food-add" class="btn">+ Lägg till mat</button>
+    </div>
+
     <h2>Logga</h2>
     <div class="card form-card">
       <label>⚖️ Vikt (kg)
@@ -251,6 +262,31 @@
       </div>
     </div>
 
+    <h2>Näringsmål per dag</h2>
+    <div class="card form-card">
+      <p class="hint">Valfria mål för matloggen på Idag-sidan — ringarna
+        fylls mot målet. Lämna tomt för att bara se summan.</p>
+      <div class="row">
+        <label>Kalorier (kcal)
+          <input id="goal-kcal" type="number" inputmode="numeric" min="0" placeholder="ej satt">
+        </label>
+        <label>Fett (g)
+          <input id="goal-fett" type="number" inputmode="numeric" min="0" placeholder="ej satt">
+        </label>
+      </div>
+      <div class="row">
+        <label>Kolhydrater (g)
+          <input id="goal-kolh" type="number" inputmode="numeric" min="0" placeholder="ej satt">
+        </label>
+        <label>Protein (g)
+          <input id="goal-protein" type="number" inputmode="numeric" min="0" placeholder="ej satt">
+        </label>
+      </div>
+      <label>Fiber (g)
+        <input id="goal-fiber" type="number" inputmode="numeric" min="0" placeholder="ej satt">
+      </label>
+    </div>
+
     <h2>Måltider i veckoplanen</h2>
     <div class="card form-card">
       <p class="hint"><strong>Visa</strong> styr vilka måltider du ser i din
@@ -284,6 +320,156 @@
   </section>
 
 </main>
+
+<!-- ===== LÄGG TILL MAT (fullskärmsark) ===== -->
+<section id="food-sheet" class="food-sheet" hidden>
+  <header class="food-sheet-head">
+    <div>
+      <h2>Lägg till mat</h2>
+      <span id="food-sheet-date" class="hint"></span>
+    </div>
+    <button id="food-sheet-close" class="food-sheet-close" aria-label="Stäng">✕</button>
+  </header>
+
+  <div id="food-tabs" class="food-tabs" role="tablist">
+    <button data-tab="scan" role="tab">
+      <span class="food-tab-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg></span>
+      Streckkod</button>
+    <button data-tab="search" role="tab" class="is-active">
+      <span class="food-tab-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></span>
+      Sök</button>
+    <button data-tab="photo" role="tab">
+      <span class="food-tab-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7l1.5-3h3L15 7"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+      Foto</button>
+    <button data-tab="quick" role="tab">
+      <span class="food-tab-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4zM19 15l.9 2.3L22 18l-2.1.7L19 21l-.9-2.3L16 18l2.1-.7zM5 15l.9 2.3L8 18l-2.1.7L5 21l-.9-2.3L2 18l2.1-.7z" fill="currentColor" stroke="none"/></svg></span>
+      Snabbt</button>
+    <button data-tab="mine" role="tab">
+      <span class="food-tab-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16l-1.5 8a2 2 0 0 1-2 1.6h-9A2 2 0 0 1 5.5 19zM8 11c0-4 1.5-7 4-7s4 3 4 7"/></svg></span>
+      Mina</button>
+  </div>
+
+  <div class="food-sheet-body">
+
+    <!-- Bekräfta/justera (delas av alla flikar) -->
+    <div id="food-confirm" class="card food-confirm" hidden>
+      <label>Namn
+        <input id="confirm-name" type="text">
+      </label>
+      <p id="confirm-note" class="hint" hidden></p>
+      <div class="row">
+        <label>Mängd (g)
+          <input id="confirm-gram" type="text" inputmode="decimal" autocomplete="off">
+        </label>
+        <label>Kalorier (kcal)
+          <input id="confirm-kcal" type="text" inputmode="decimal" autocomplete="off">
+        </label>
+      </div>
+      <div class="row">
+        <label>Fett (g)
+          <input id="confirm-fett" type="text" inputmode="decimal" autocomplete="off">
+        </label>
+        <label>Kolhydrater (g)
+          <input id="confirm-kolh" type="text" inputmode="decimal" autocomplete="off">
+        </label>
+      </div>
+      <div class="row">
+        <label>Protein (g)
+          <input id="confirm-protein" type="text" inputmode="decimal" autocomplete="off">
+        </label>
+        <label>Fiber (g)
+          <input id="confirm-fiber" type="text" inputmode="decimal" autocomplete="off">
+        </label>
+      </div>
+      <button id="btn-confirm-save" class="btn">Logga detta</button>
+      <button id="btn-confirm-cancel" class="btn btn-secondary">Avbryt</button>
+    </div>
+
+    <!-- Sök -->
+    <div class="food-panel" data-tab="search">
+      <input id="food-search-input" type="search" class="food-search"
+             placeholder="Sök livsmedel …" autocomplete="off">
+      <p class="hint">Söker i Livsmedelsverkets livsmedelsdatabas
+        (2 606 svenska livsmedel) och bland dina egna.</p>
+      <p id="food-search-status" class="hint" role="status"></p>
+      <ul id="food-search-results" class="food-results"></ul>
+    </div>
+
+    <!-- Streckkod -->
+    <div class="food-panel" data-tab="scan" hidden>
+      <video id="scan-video" class="scan-video" playsinline hidden></video>
+      <button id="btn-scan-start" class="btn">📷 Starta kameran</button>
+      <p id="scan-status" class="hint" role="status"></p>
+      <button id="btn-scan-create" class="btn btn-secondary" hidden>
+        Skapa eget livsmedel med koden</button>
+      <p class="hint">Skanna EAN-koden på förpackningen. Uppslag sker mot
+        Open Food Facts — egna livsmedel med samma kod används först.</p>
+    </div>
+
+    <!-- Foto -->
+    <div class="food-panel" data-tab="photo" hidden>
+      <label class="btn photo-label">📷 Ta en bild på maten
+        <input id="photo-input" type="file" accept="image/*" capture="environment" hidden>
+      </label>
+      <img id="photo-preview" class="photo-preview" alt="Förhandsvisning" hidden>
+      <p id="photo-status" class="hint" role="status"></p>
+      <p class="hint">AI:n uppskattar portion, kalorier och näringsfördelning
+        från bilden (±20–30 % — justera gärna innan du sparar).</p>
+    </div>
+
+    <!-- Snabbt -->
+    <div class="food-panel" data-tab="quick" hidden>
+      <textarea id="quick-input" rows="3" class="quick-input"
+        placeholder="Beskriv vad du åt, t.ex. &quot;två stekta ägg och en halv avokado&quot;"></textarea>
+      <button id="btn-quick-analyze" class="btn">✨ Analysera</button>
+      <p id="quick-status" class="hint" role="status"></p>
+    </div>
+
+    <!-- Mina livsmedel -->
+    <div class="food-panel" data-tab="mine" hidden>
+      <button id="btn-myfood-new" class="btn btn-secondary">+ Nytt livsmedel</button>
+      <div id="myfood-form" class="card form-card" hidden>
+        <label>Namn
+          <input id="myfood-name" type="text" placeholder="t.ex. Proteinshake">
+        </label>
+        <div class="row">
+          <label>Märke
+            <input id="myfood-brand" type="text" placeholder="valfritt">
+          </label>
+          <label>Streckkod
+            <input id="myfood-barcode" type="text" inputmode="numeric" placeholder="valfritt">
+          </label>
+        </div>
+        <p class="hint">Näringsvärden per 100 g:</p>
+        <div class="row">
+          <label>Kcal
+            <input id="myfood-kcal" type="text" inputmode="decimal" autocomplete="off">
+          </label>
+          <label>Fett (g)
+            <input id="myfood-fett" type="text" inputmode="decimal" autocomplete="off">
+          </label>
+        </div>
+        <div class="row">
+          <label>Kolhydrater (g)
+            <input id="myfood-kolh" type="text" inputmode="decimal" autocomplete="off">
+          </label>
+          <label>Protein (g)
+            <input id="myfood-protein" type="text" inputmode="decimal" autocomplete="off">
+          </label>
+        </div>
+        <label>Fiber (g)
+          <input id="myfood-fiber" type="text" inputmode="decimal" autocomplete="off">
+        </label>
+        <button id="btn-myfood-save" class="btn">Spara livsmedel</button>
+        <button id="btn-myfood-cancel" class="btn btn-secondary">Avbryt</button>
+        <button id="btn-myfood-delete" class="btn btn-danger" hidden>Ta bort</button>
+      </div>
+      <p id="myfoods-status" class="hint" role="status"></p>
+      <ul id="myfoods-list" class="food-results"></ul>
+    </div>
+
+  </div>
+</section>
 
 <nav class="tabbar" hidden>
   <button data-view="today" class="is-active">

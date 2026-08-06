@@ -16,6 +16,13 @@ enheter och mellan hushållets två konton.
 - **Måltider** — veckoplan med sex platser (frukost, mellanmål ×3, lunch,
   middag). Per plats väljer var och en under *Mer* om den ska visas och om
   den delas i hushållet eller är privat.
+- **Mat idag** — logga måltider med kalorier och makron (fett/kolhydrater/
+  protein/fiber) mot valfria dagsmål. Fyra sätt att lägga till:
+  **Sök** i Livsmedelsverkets livsmedelsdatabas (2 606 svenska livsmedel,
+  snapshot i Supabase), **Streckkod** (kameraskanning + Open Food Facts),
+  **Foto/Snabbt** (AI-analys av matbild eller fritext via Claude) samt
+  **Mina** egna livsmedel med egna näringsvärden (t.ex. för sådant som
+  inte hittas — kan kopplas till en streckkod).
 - **Historik** — tabell över alla loggade dagar.
 - **Konto & synk** — valfritt konto (Supabase) synkar hälsodata och mål mellan
   enheter. Hälsodatan är privat per konto (Row Level Security); endast
@@ -59,18 +66,42 @@ js/store.js             lokalt datalager (localStorage), mål & streaks
 js/charts.js            SVG-linje/stapeldiagram med tooltip
 js/import.js            Apple Health-import (export.xml, Health Auto Export, #log-URL)
 js/config.js            Supabase-URL + publik nyckel
-js/cloud.js             Supabase-klient: konto, poster, mål, måltidsplan
+js/cloud.js             Supabase-klient: konto, poster, mål, måltidsplan, matlogg
 js/sync.js              synk-orkestrering med offline-kö
+js/food.js              matloggning: sök, streckkod, AI-foto/fritext, egna livsmedel
 js/vendor/supabase-js.js  inbundlad @supabase/supabase-js
+js/vendor/zxing.js      inbundlad @zxing (streckkodsläsning i kameran)
 js/app.js               vyer och händelser
 sw.js                   offline-cache
+supabase/functions/     Edge-funktioner (analyze-food – AI-bildanalys)
 docs/apple-health.html  guide för Apple Hälsa-integration
 ```
 
 ### Backend (Supabase)
 
-Tabeller: `profiles` (namn + mål per konto), `entries` (dagliga hälsoposter,
-privata via RLS), `meal_plans` (delad veckoplan, unik per datum + måltidstyp).
+Tabeller: `profiles` (namn + mål per konto), `entries` (dagliga hälsoposter
+inkl. matloggen i `food`-kolumnen, privata via RLS), `meal_plans` (delad
+veckoplan, unik per datum + måltidstyp), `food_db` (snapshot av
+Livsmedelsverkets livsmedelsdatabas — 2 606 livsmedel, värden per 100 g,
+CC BY 4.0, hämtad 2026-08-05 — med trigram-indexerad sökfunktion
+`search_food`) samt `custom_foods` (egna livsmedel, privata via RLS).
 En databastrigger skapar profilen vid registrering och en annan blockerar
 fler än två konton. Migrationerna ligger i Supabase-projektet
-(`initial_schema`, `harden_and_limit_household`).
+(`initial_schema`, `harden_and_limit_household`, `meal_slots_and_privacy`,
+`food_logging`).
+
+### AI-bildanalys (Claude)
+
+Edge-funktionen `analyze-food` (källa i `supabase/functions/`) tar emot en
+matbild eller fritext, anropar Claude (modell `claude-haiku-4-5`, ca 3 öre
+per bild) och returnerar en strukturerad uppskattning (namn, portionsvikt,
+kcal, fett/kolhydrater/protein/fiber + säkerhetsnivå). API-nyckeln lagras
+som Edge Function-hemlighet i Supabase — **aldrig** i frontend:
+
+1. Skapa en API-nyckel på [console.anthropic.com](https://console.anthropic.com)
+   (kräver betalkonto, betala per användning).
+2. Supabase-dashboarden → *Edge Functions* → *Secrets* → lägg till
+   `ANTHROPIC_API_KEY`.
+
+Tills nyckeln finns svarar funktionen med ett vänligt felmeddelande i appen;
+allt annat (sök, streckkod, egna livsmedel) fungerar utan den.

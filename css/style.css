@@ -700,3 +700,239 @@ h2 {
 @media (min-width: 720px) {
   .app-header { max-width: 720px; margin: 0 auto; }
 }
+
+/* ---------- Matlogg ---------- */
+:root {
+  --macro-fett: #d99a26;
+  --macro-kolh: #4f83e6;
+  --macro-protein: #d16572;
+  --macro-fiber: #8a6d4f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --macro-fett: #e5b04a;
+    --macro-kolh: #7ea4f0;
+    --macro-protein: #e08893;
+    --macro-fiber: #a98f72;
+  }
+}
+:root[data-theme="dark"] {
+  --macro-fett: #e5b04a;
+  --macro-kolh: #7ea4f0;
+  --macro-protein: #e08893;
+  --macro-fiber: #a98f72;
+}
+
+.food-kcal-row { display: flex; align-items: baseline; gap: 4px; }
+.food-kcal-row strong { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; }
+.food-kcal-row span { color: var(--muted); font-size: 15px; font-weight: 600; }
+
+.food-rings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 14px 0 6px;
+}
+.food-ring { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.food-donut { position: relative; width: 56px; height: 56px; }
+.food-donut::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--ring-c, var(--accent)) 0 var(--pct, 0turn),
+              var(--field) var(--pct, 0turn) 1turn);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+}
+.food-donut-num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 800;
+}
+.food-ring-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-align: center; }
+.macro-fett { --ring-c: var(--macro-fett); }
+.macro-kolh { --ring-c: var(--macro-kolh); }
+.macro-protein { --ring-c: var(--macro-protein); }
+.macro-fiber { --ring-c: var(--macro-fiber); }
+
+.food-log-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.food-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 2px;
+  border-top: 1px solid var(--grid);
+}
+.food-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.food-item-body strong { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.food-item-sub { color: var(--muted); font-size: 12.5px; }
+.food-item-kcal { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.food-item-del {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: var(--field);
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ---------- Ark: Lägg till mat ---------- */
+.food-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--page);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px calc(40px + env(safe-area-inset-bottom));
+}
+.food-sheet[hidden] { display: none; }
+.food-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(16px, env(safe-area-inset-top)) 4px 8px;
+  position: sticky;
+  top: 0;
+  background: var(--page);
+  z-index: 2;
+}
+.food-sheet-head h2 { margin: 0; font-size: 22px; }
+.food-sheet-close {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.food-tabs {
+  display: flex;
+  gap: 4px;
+  justify-content: space-between;
+  margin: 8px 0 16px;
+}
+.food-tabs button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.food-tab-pill {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--surface);
+}
+.food-tabs button svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.food-tabs button.is-active { color: var(--accent); }
+.food-tabs button.is-active .food-tab-pill { background: var(--accent-soft); }
+
+.food-search, .quick-input {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: none;
+  border-radius: 16px;
+}
+.food-search:focus, .quick-input:focus { outline: 2px solid var(--accent); }
+.quick-input { resize: none; line-height: 1.5; }
+
+.food-results { list-style: none; margin: 10px 0; padding: 0; }
+.food-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 13px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.food-add-btn, .food-edit-btn {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1.5px solid var(--baseline);
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+.food-edit-btn { font-size: 15px; color: var(--muted); }
+
+.scan-video {
+  width: 100%;
+  max-height: 46vh;
+  border-radius: 20px;
+  background: #000;
+  object-fit: cover;
+}
+.photo-label { text-align: center; }
+.photo-preview {
+  display: block;
+  width: 100%;
+  max-height: 40vh;
+  object-fit: cover;
+  border-radius: 20px;
+  margin: 10px 0;
+}
+
+.food-confirm { box-shadow: var(--shadow); }
+.food-confirm label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 12px;
+}
+.food-confirm input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 13px 14px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--field);
+  border: none;
+  border-radius: 14px;
+}
+.food-confirm input:focus { outline: 2px solid var(--accent); }
