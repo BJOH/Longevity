@@ -987,3 +987,6 @@ h2 {
 .fasting-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .fasting-head strong { font-size: 16px; font-weight: 800; }
 .fasting-time { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.row-3 .btn { padding: 13px 6px; font-size: 14px; hyphens: manual; }

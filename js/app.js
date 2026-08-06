@@ -692,6 +692,10 @@ function suggestTargets(profile) {
   if (profile === 'keto') {
     kolh = 25;
     fett = Math.max(0, Math.round((kcal - protein * 4 - kolh * 4) / 9 / 5) * 5);
+  } else if (profile === 'lowcarb') {
+    // Kolhydratsnålt utan att vara keto: ca 20 % av kalorierna från kolhydrater
+    kolh = Math.round(kcal * 0.20 / 4 / 5) * 5;
+    fett = Math.max(0, Math.round((kcal - protein * 4 - kolh * 4) / 9 / 5) * 5);
   } else {
     fett = Math.round(kcal * 0.30 / 9 / 5) * 5;
     kolh = Math.max(0, Math.round((kcal - protein * 4 - fett * 9) / 4 / 5) * 5);
@@ -732,6 +736,7 @@ function bindSettings() {
   $('#goal-protein').addEventListener('change', ev => store.setGoals({ proteinTarget: num(ev.target) }));
   $('#goal-fiber').addEventListener('change', ev => store.setGoals({ fiberTarget: num(ev.target) }));
   $('#btn-macro-keto').addEventListener('click', () => suggestTargets('keto'));
+  $('#btn-macro-lowcarb').addEventListener('click', () => suggestTargets('lowcarb'));
   $('#btn-macro-mixed').addEventListener('click', () => suggestTargets('mixed'));
   $('#rules-input').addEventListener('change', ev => {
     store.setGoals({ rules: ev.target.value });
