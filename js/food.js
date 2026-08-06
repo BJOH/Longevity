@@ -553,7 +553,7 @@ const AI_ERRORS = {
   for_manga_anrop: 'För många anrop just nu — vänta en stund och försök igen.',
 };
 
-async function fileToResizedBase64(file, maxSide = 1100) {
+async function fileToResizedBase64(file, maxSide = 1568) {
   const bmp = await createImageBitmap(file);
   const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
   const canvas = document.createElement('canvas');
@@ -676,7 +676,16 @@ function bindSheet() {
   // Streckkod
   $('#btn-scan-start').addEventListener('click', () => { lastCode = null; startScanner(); });
 
-  // Foto: ta ny bild eller välj från biblioteket — samma analys
+  // Foto: ta ny bild eller välj från biblioteket — samma analys.
+  // En valfri ledtråd skickas med bilden, och senaste bilden sparas så
+  // att man kan rätta ledtråden och analysera om utan att ta om fotot.
+  let lastPhoto = null;
+  const analyzePhoto = async () => {
+    if (!lastPhoto) return;
+    const hint = $('#photo-hint').value.trim();
+    await analyzeAndConfirm(
+      { ...lastPhoto, text: hint || undefined }, $('#photo-status'), 'ai');
+  };
   const handlePhoto = async ev => {
     const file = ev.target.files[0];
     ev.target.value = '';
@@ -685,15 +694,18 @@ function bindSheet() {
     try {
       status.textContent = 'Förbereder bilden …';
       const base64 = await fileToResizedBase64(file);
+      lastPhoto = { image: base64, mediaType: 'image/jpeg' };
       $('#photo-preview').src = `data:image/jpeg;base64,${base64}`;
       $('#photo-preview').hidden = false;
-      await analyzeAndConfirm({ image: base64, mediaType: 'image/jpeg' }, status, 'ai');
+      $('#btn-photo-reanalyze').hidden = false;
+      await analyzePhoto();
     } catch {
       status.textContent = 'Kunde inte läsa bilden.';
     }
   };
   $('#photo-input').addEventListener('change', handlePhoto);
   $('#photo-pick').addEventListener('change', handlePhoto);
+  $('#btn-photo-reanalyze').addEventListener('click', analyzePhoto);
 
   // Snabbt (fritext)
   $('#btn-quick-analyze').addEventListener('click', () => {

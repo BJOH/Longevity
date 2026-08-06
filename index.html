@@ -467,10 +467,16 @@
           <input id="photo-pick" type="file" accept="image/*" hidden>
         </label>
       </div>
+      <input id="photo-hint" type="text" class="food-search"
+             placeholder="Valfri ledtråd, t.ex. &quot;kycklingpasta med feta&quot;"
+             autocomplete="off">
       <img id="photo-preview" class="photo-preview" alt="Förhandsvisning" hidden>
+      <button id="btn-photo-reanalyze" class="btn btn-secondary" hidden>
+        🔁 Analysera igen (med ledtråden)</button>
       <p id="photo-status" class="hint" role="status"></p>
       <p class="hint">AI:n uppskattar portion, kalorier och näringsfördelning
-        från bilden (±20–30 % — justera gärna innan du sparar).</p>
+        från bilden (±20–30 % — justera gärna innan du sparar). Blir något
+        felidentifierat: skriv en ledtråd och tryck Analysera igen.</p>
     </div>
 
     <!-- Snabbt -->

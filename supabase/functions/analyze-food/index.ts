@@ -80,9 +80,10 @@ Deno.serve(async (req: Request) => {
 
   try {
     const client = new Anthropic({ apiKey });
-    // Haiku 4.5: klart billigast (~3 öre/bild) och fullt tillräcklig för matbilder.
+    // Sonnet 5: klart bättre bildidentifiering än Haiku (kyckling vs tonfisk,
+    // persika vs äpple) för ~8–10 öre per analys.
     const msg = await client.messages.create({
-      model: 'claude-haiku-4-5',
+      model: 'claude-sonnet-5',
       max_tokens: 1024,
       // temperature 0: samma indata ger samma uppskattning (ingen slumpvariation)
       temperature: 0,
