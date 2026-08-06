@@ -990,3 +990,38 @@ h2 {
 
 .row-3 { grid-template-columns: 1fr 1fr 1fr; }
 .row-3 .btn { padding: 13px 6px; font-size: 14px; hyphens: manual; }
+
+/* Loggad mat i veckovyn */
+.meal-day-total {
+  margin: 2px 0 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.meal-logged {
+  margin: -4px 0 8px;
+  padding-left: 2px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--good);
+}
+
+/* Zoomknappar i streckkodsläsaren */
+.zoom-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 10px 0 2px;
+}
+.zoom-row button {
+  min-width: 52px;
+  padding: 9px 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.zoom-row button.is-active { background: var(--accent-soft); color: var(--accent); }
