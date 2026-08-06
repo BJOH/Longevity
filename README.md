@@ -16,13 +16,17 @@ enheter och mellan hushållets två konton.
 - **Måltider** — veckoplan med sex platser (frukost, mellanmål ×3, lunch,
   middag). Per plats väljer var och en under *Mer* om den ska visas och om
   den delas i hushållet eller är privat.
-- **Mat idag** — logga måltider med kalorier och makron (fett/kolhydrater/
-  protein/fiber) mot valfria dagsmål. Fyra sätt att lägga till:
-  **Sök** i Livsmedelsverkets livsmedelsdatabas (2 606 svenska livsmedel,
-  snapshot i Supabase), **Streckkod** (kameraskanning + Open Food Facts),
-  **Foto/Snabbt** (AI-analys av matbild eller fritext via Claude) samt
-  **Mina** egna livsmedel med egna näringsvärden (t.ex. för sådant som
-  inte hittas — kan kopplas till en streckkod).
+- **Måltider → Logga dag** — matlogg per dag och måltidsplats med
+  kalorimätare (ätit/kvar/mål), makrokort med staplar (kolhydrater/protein/
+  fett/fiber), kaloribudget per måltid och fastestatus (ketos-markering
+  efter 12 h, beräknad från gårdagens sista måltid). Fyra sätt att lägga
+  till: **Sök** i Livsmedelsverkets livsmedelsdatabas (2 606 svenska
+  livsmedel, snapshot i Supabase), **Streckkod** (kameraskanning + Open
+  Food Facts), **Foto/Snabbt** (AI-analys av matbild eller fritext via
+  Claude) samt **Mina** egna livsmedel (kan kopplas till en streckkod).
+  Under *Mer → Näringsmål per dag* finns förslagsknappar (keto/blandkost)
+  som räknar fram mål för viktnedgång med bibehållen muskelmassa
+  (protein 1,8 g/kg, underskott från viktplanen).
 - **Historik** — tabell över alla loggade dagar.
 - **Konto & synk** — valfritt konto (Supabase) synkar hälsodata och mål mellan
   enheter. Hälsodatan är privat per konto (Row Level Security); endast

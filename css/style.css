@@ -723,42 +723,6 @@ h2 {
   --macro-fiber: #a98f72;
 }
 
-.food-kcal-row { display: flex; align-items: baseline; gap: 4px; }
-.food-kcal-row strong { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; }
-.food-kcal-row span { color: var(--muted); font-size: 15px; font-weight: 600; }
-
-.food-rings {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin: 14px 0 6px;
-}
-.food-ring { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.food-donut { position: relative; width: 56px; height: 56px; }
-.food-donut::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(var(--ring-c, var(--accent)) 0 var(--pct, 0turn),
-              var(--field) var(--pct, 0turn) 1turn);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
-}
-.food-donut-num {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 14px;
-  font-weight: 800;
-}
-.food-ring-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-align: center; }
-.macro-fett { --ring-c: var(--macro-fett); }
-.macro-kolh { --ring-c: var(--macro-kolh); }
-.macro-protein { --ring-c: var(--macro-protein); }
-.macro-fiber { --ring-c: var(--macro-fiber); }
-
 .food-log-list { list-style: none; margin: 8px 0 0; padding: 0; }
 .food-item {
   display: flex;
@@ -936,3 +900,90 @@ h2 {
   border-radius: 14px;
 }
 .food-confirm input:focus { outline: 2px solid var(--accent); }
+
+/* ---------- Måltider: dagvy ---------- */
+.gauge-card { position: relative; text-align: center; padding-bottom: 12px; }
+.kcal-gauge { width: min(240px, 70%); display: block; margin: 0 auto; }
+.gauge-track, .gauge-fill {
+  fill: none;
+  stroke-width: 13;
+  stroke-linecap: round;
+}
+.gauge-track { stroke: var(--field); }
+.gauge-fill { stroke: var(--accent); }
+.gauge-fill.is-over { stroke: var(--danger); }
+.gauge-center {
+  position: absolute;
+  top: 46px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+.gauge-center strong { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.gauge-center span { color: var(--muted); font-size: 13px; font-weight: 600; }
+.gauge-row {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.gauge-row b { font-size: 17px; color: var(--ink); font-weight: 800; }
+
+.macro-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.macro-card {
+  margin: 0;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.macro-card strong { font-size: 14px; font-weight: 700; }
+.macro-nums { color: var(--muted); font-size: 13px; font-weight: 600; }
+.macro-bar {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--field);
+  overflow: hidden;
+}
+.macro-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ring-c, var(--accent));
+  transition: width 0.3s;
+}
+.macro-bar-fill.is-over { background: var(--danger); }
+
+.meal-slot { padding: 14px 16px; }
+.meal-slot-head { display: flex; align-items: center; gap: 10px; }
+.meal-slot-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.meal-slot-info strong { font-size: 16px; font-weight: 700; }
+.meal-slot-sub { color: var(--muted); font-size: 13px; font-weight: 600; }
+.meal-slot-add {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.meal-slot .food-log-list { margin-top: 6px; }
+
+.fasting-card { border: 1.5px solid var(--accent-soft); }
+.fasting-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.fasting-head strong { font-size: 16px; font-weight: 800; }
+.fasting-time { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }

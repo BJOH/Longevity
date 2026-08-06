@@ -1,6 +1,7 @@
-/* Matloggning: dagskort med näringsringar + fullskärmsark för att lägga
-   till mat via sökning (Livsmedelsverkets databas), streckkod (Open Food
-   Facts), AI-foto/fritext (Claude via Edge-funktion) och egna livsmedel. */
+/* Matloggning under Måltider: dagvy med kalorimätare, makrokort och
+   loggning per måltidsplats, plus fullskärmsark för att lägga till mat via
+   sökning (Livsmedelsverkets databas), streckkod (Open Food Facts),
+   AI-foto/fritext (Claude via Edge-funktion) och egna livsmedel. */
 import * as store from './store.js';
 import * as cloud from './cloud.js';
 
@@ -11,9 +12,9 @@ let toast = () => {};
 let onLogged = () => {};
 
 const MACROS = [
-  { key: 'fett', label: 'Fett', target: 'fettTarget', cls: 'macro-fett' },
-  { key: 'kolh', label: 'Kolh', target: 'kolhTarget', cls: 'macro-kolh' },
+  { key: 'kolh', label: 'Kolhydrater', target: 'kolhTarget', cls: 'macro-kolh' },
   { key: 'protein', label: 'Protein', target: 'proteinTarget', cls: 'macro-protein' },
+  { key: 'fett', label: 'Fett', target: 'fettTarget', cls: 'macro-fett' },
   { key: 'fiber', label: 'Fiber', target: 'fiberTarget', cls: 'macro-fiber' },
 ];
 
@@ -23,89 +24,242 @@ const svNum = (v, dec = 0) => (v ?? 0).toLocaleString('sv-SE', {
   minimumFractionDigits: 0, maximumFractionDigits: dec,
 });
 
-/* ---------- Dagskortet på Idag ---------- */
-export function renderFoodCard() {
-  const key = store.todayKey();
-  const e = store.getEntry(key);
-  const totals = store.foodTotals(key);
+const addDays = (k, n) => {
+  const d = new Date(k + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return store.todayKey(d);
+};
+
+/* ---------- Dagvyn under Måltider ---------- */
+let dayKey = store.todayKey();
+let fastingTimer = null;
+
+/* Kaloribudget per synlig måltidsplats: dagens mål fördelat efter vikterna
+   i MEAL_TYPES (frukost 3, lunch 4, middag 4, mellanmål 1). */
+function slotBudgets(visible, kcalTarget) {
+  if (typeof kcalTarget !== 'number' || !visible.length) return {};
+  const total = visible.reduce((s, mt) => s + mt.weight, 0);
+  const out = {};
+  for (const mt of visible) {
+    out[mt.key] = Math.round(kcalTarget * mt.weight / total / 10) * 10;
+  }
+  return out;
+}
+
+function gaugeArc(pct) {
+  // Halvcirkelbåge 200×116: från (16,104) över toppen till (184,104)
+  const a = Math.PI * (1 - Math.max(0, Math.min(1, pct)));
+  const x = 100 + 84 * Math.cos(a);
+  const y = 104 - 84 * Math.sin(a);
+  const large = pct > 0.5 ? 1 : 0;
+  return `M 16 104 A 84 84 0 ${large} 1 ${x.toFixed(1)} ${y.toFixed(1)}`;
+}
+
+export function renderFoodDay() {
+  const todayK = store.todayKey();
+  const e = store.getEntry(dayKey);
+  const totals = store.foodTotals(dayKey);
   const g = store.getGoals();
 
-  const kcalEl = $('#food-kcal');
-  kcalEl.textContent = svNum(totals.kcal);
-  $('#food-kcal-target').textContent =
-    typeof g.kcalTarget === 'number' ? ` / ${svNum(g.kcalTarget)} kcal` : ' kcal';
+  // Dagsnavigering
+  const d = new Date(dayKey + 'T12:00:00');
+  $('#day-label').textContent = dayKey === todayK ? 'Idag'
+    : d.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'short' });
+  $('#day-next').disabled = dayKey >= todayK;
 
-  const rings = $('#food-rings');
-  rings.textContent = '';
+  // Kalorimätare
+  const target = g.kcalTarget;
+  const hasTarget = typeof target === 'number' && target > 0;
+  $('#gauge-track').setAttribute('d', gaugeArc(1));
+  const pct = hasTarget ? totals.kcal / target : 0;
+  $('#gauge-fill').setAttribute('d', totals.kcal > 0 && hasTarget ? gaugeArc(pct) : '');
+  $('#gauge-fill').classList.toggle('is-over', hasTarget && pct > 1);
+  $('#gauge-big').textContent = hasTarget
+    ? svNum(Math.max(0, Math.round(target - totals.kcal)))
+    : svNum(totals.kcal);
+  $('#gauge-sub').textContent = hasTarget
+    ? (totals.kcal > target ? 'kcal över målet' : 'kcal kvar')
+    : 'kcal loggat';
+  $('#gauge-eaten').textContent = svNum(totals.kcal);
+  $('#gauge-goal').textContent = hasTarget ? svNum(target) : '–';
+  $('#gauge-hint').hidden = hasTarget;
+
+  // Makrokort med staplar
+  const cards = $('#macro-cards');
+  cards.textContent = '';
   for (const m of MACROS) {
-    const target = g[m.target];
+    const t = g[m.target];
+    const hasT = typeof t === 'number' && t > 0;
     const val = totals[m.key];
-    const pct = typeof target === 'number' && target > 0
-      ? Math.min(val / target, 1) : 0;
-    const ring = document.createElement('div');
-    ring.className = `food-ring ${m.cls}`;
-    const donut = document.createElement('span');
-    donut.className = 'food-donut';
-    donut.style.setProperty('--pct', `${pct}turn`);
-    const num = document.createElement('span');
-    num.className = 'food-donut-num';
-    num.textContent = svNum(val);
-    donut.appendChild(num);
-    const lbl = document.createElement('span');
-    lbl.className = 'food-ring-label';
-    lbl.textContent = typeof target === 'number'
-      ? `${m.label} /${svNum(target)} g` : `${m.label} g`;
-    ring.append(donut, lbl);
-    rings.appendChild(ring);
+    const card = document.createElement('div');
+    card.className = `card macro-card ${m.cls}`;
+    const name = document.createElement('strong');
+    name.textContent = m.label;
+    const nums = document.createElement('span');
+    nums.className = 'macro-nums';
+    nums.textContent = hasT ? `${svNum(val, 1)} / ${svNum(t)} g` : `${svNum(val, 1)} g`;
+    const bar = document.createElement('span');
+    bar.className = 'macro-bar';
+    const fill = document.createElement('span');
+    fill.className = 'macro-bar-fill';
+    const p = hasT ? Math.min(val / t, 1) : 0;
+    fill.style.width = `${(p * 100).toFixed(1)}%`;
+    if (hasT && val > t) fill.classList.add('is-over');
+    bar.appendChild(fill);
+    card.append(name, nums, bar);
+    cards.appendChild(card);
   }
 
-  const list = $('#food-log-list');
-  list.textContent = '';
-  for (const f of e.food || []) {
-    const li = document.createElement('li');
-    li.className = 'food-item';
-    const body = document.createElement('div');
-    body.className = 'food-item-body';
+  // Måltidsplatser med loggade livsmedel
+  const prefs = g.mealPrefs;
+  const visible = store.MEAL_TYPES.filter(mt => prefs[mt.key]?.show);
+  const budgets = slotBudgets(visible, target);
+  const items = e.food || [];
+  const box = $('#meal-slots');
+  box.textContent = '';
+
+  const renderSlot = (mt, slotItems, budget) => {
+    const card = document.createElement('div');
+    card.className = 'card meal-slot';
+    const head = document.createElement('div');
+    head.className = 'meal-slot-head';
+    const info = document.createElement('div');
+    info.className = 'meal-slot-info';
     const name = document.createElement('strong');
-    name.textContent = f.namn;
+    name.textContent = `${mt.icon} ${mt.label}`;
     const sub = document.createElement('span');
-    sub.className = 'food-item-sub';
-    const bits = [];
-    if (typeof f.gram === 'number') bits.push(`${svNum(f.gram)} g`);
-    if (f.src && SRC_LABEL[f.src]) bits.push(SRC_LABEL[f.src]);
-    sub.textContent = bits.join(' · ');
-    body.append(name, sub);
-    const kcal = document.createElement('span');
-    kcal.className = 'food-item-kcal';
-    kcal.textContent = `${svNum(f.kcal)} kcal`;
-    const del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'food-item-del';
-    del.setAttribute('aria-label', `Ta bort ${f.namn}`);
-    del.textContent = '✕';
-    del.addEventListener('click', () => {
-      store.removeFood(key, f.id);
-      renderFoodCard();
-      onLogged();
-    });
-    li.append(body, kcal, del);
-    list.appendChild(li);
+    sub.className = 'meal-slot-sub';
+    const eaten = slotItems.reduce((s, f) => s + (f.kcal || 0), 0);
+    sub.textContent = budget
+      ? `${svNum(eaten)} / ${svNum(budget)} kcal`
+      : `${svNum(eaten)} kcal`;
+    info.append(name, sub);
+    head.appendChild(info);
+    if (mt.key !== 'ovrigt') {
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'meal-slot-add';
+      add.setAttribute('aria-label', `Lägg till mat: ${mt.label}`);
+      add.textContent = '+';
+      add.addEventListener('click', () => openSheet({ date: dayKey, meal: mt.key, label: mt.label }));
+      head.appendChild(add);
+    }
+    card.appendChild(head);
+    if (slotItems.length) {
+      const ul = document.createElement('ul');
+      ul.className = 'food-log-list';
+      for (const f of slotItems) {
+        const li = document.createElement('li');
+        li.className = 'food-item';
+        const body = document.createElement('div');
+        body.className = 'food-item-body';
+        const nm = document.createElement('strong');
+        nm.textContent = f.namn;
+        const s2 = document.createElement('span');
+        s2.className = 'food-item-sub';
+        const bits = [];
+        if (typeof f.gram === 'number') bits.push(`${svNum(f.gram)} g`);
+        if (f.src && SRC_LABEL[f.src]) bits.push(SRC_LABEL[f.src]);
+        s2.textContent = bits.join(' · ');
+        body.append(nm, s2);
+        const kc = document.createElement('span');
+        kc.className = 'food-item-kcal';
+        kc.textContent = `${svNum(f.kcal)} kcal`;
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'food-item-del';
+        del.setAttribute('aria-label', `Ta bort ${f.namn}`);
+        del.textContent = '✕';
+        del.addEventListener('click', () => {
+          store.removeFood(dayKey, f.id);
+          renderFoodDay();
+          onLogged();
+        });
+        li.append(body, kc, del);
+        ul.appendChild(li);
+      }
+      card.appendChild(ul);
+    }
+    box.appendChild(card);
+  };
+
+  const visibleKeys = new Set(visible.map(mt => mt.key));
+  for (const mt of visible) {
+    renderSlot(mt, items.filter(f => f.meal === mt.key), budgets[mt.key]);
   }
-  $('#food-empty').hidden = (e.food || []).length > 0;
+  const rest = items.filter(f => !f.meal || !visibleKeys.has(f.meal));
+  if (rest.length) renderSlot({ key: 'ovrigt', label: 'Övrigt', icon: '🍽' }, rest, null);
+
+  renderFasting();
+}
+
+/* Fastestatus: från gårdagens (eller dagens) sista måltid tills första
+   måltiden loggas idag. Ketos-markering efter 12 h. Visas bara för idag. */
+function renderFasting() {
+  const card = $('#fasting-card');
+  clearInterval(fastingTimer);
+  fastingTimer = null;
+  if (dayKey !== store.todayKey()) { card.hidden = true; return; }
+
+  const eToday = store.getEntry(dayKey);
+  const eY = store.getEntry(addDays(dayKey, -1));
+
+  const update = () => {
+    if (!eToday.firstMeal && eY.lastMeal) {
+      const start = new Date(`${addDays(dayKey, -1)}T${eY.lastMeal}`);
+      const h = (Date.now() - start.getTime()) / 3600000;
+      if (h > 0 && h < 48) {
+        card.hidden = false;
+        $('#fasting-title').textContent = h >= 12 ? '⚡ Du fastar — ketos-zon!' : 'Du fastar';
+        const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
+        $('#fasting-elapsed').textContent = `${hh} h ${String(mm).padStart(2, '0')} min`;
+        $('#fasting-sub').textContent =
+          `Sedan sista måltiden igår kl ${eY.lastMeal}. Mål: ${svNum(store.getGoals().fastingHours)} h.`;
+        return;
+      }
+    }
+    if (eToday.firstMeal) {
+      const fast = store.fastingHoursFor(eY.lastMeal ? {
+        firstMeal: eToday.firstMeal, lastMeal: eY.lastMeal,
+      } : eToday);
+      card.hidden = false;
+      $('#fasting-title').textContent = 'Fastan bruten';
+      $('#fasting-elapsed').textContent = '';
+      $('#fasting-sub').textContent = fast !== null
+        ? `Första måltid kl ${eToday.firstMeal} — ${String(fast).replace('.', ',')} h fasta. Bra jobbat!`
+        : `Första måltid kl ${eToday.firstMeal}.`;
+      return;
+    }
+    card.hidden = true;
+  };
+  update();
+  if (!card.hidden && !eToday.firstMeal) fastingTimer = setInterval(update, 60000);
+}
+
+export function bindFoodDay(opts) {
+  toast = opts.toast;
+  onLogged = opts.onChange || (() => {});
+  $('#day-prev').addEventListener('click', () => { dayKey = addDays(dayKey, -1); renderFoodDay(); });
+  $('#day-next').addEventListener('click', () => {
+    if (dayKey < store.todayKey()) { dayKey = addDays(dayKey, 1); renderFoodDay(); }
+  });
+  bindSheet();
 }
 
 /* ---------- Arket ---------- */
 let sheetOpen = false;
+let sheetTarget = { date: null, meal: null };
 let scanControls = null;   // ZXing-kontroller när kameran är igång
-let photoData = null;      // {base64, mediaType}
 
-function openSheet() {
+function openSheet(target) {
+  sheetTarget = target;
   sheetOpen = true;
   $('#food-sheet').hidden = false;
   document.body.style.overflow = 'hidden';
-  $('#food-sheet-date').textContent = new Date().toLocaleDateString('sv-SE', {
-    weekday: 'long', day: 'numeric', month: 'long',
-  });
+  const d = new Date(target.date + 'T12:00:00');
+  const dayTxt = target.date === store.todayKey() ? 'idag'
+    : d.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'short' });
+  $('#food-sheet-date').textContent = `${target.label} · ${dayTxt}`;
   switchTab('search');
   setTimeout(() => $('#food-search-input').focus(), 50);
 }
@@ -153,7 +307,6 @@ function showConfirm({ namn, gram, per100, values, src, brand, note }) {
 function hideConfirm() {
   $('#food-confirm').hidden = true;
   confirmCtx = null;
-  photoData = null;
 }
 
 function recomputeFromGram() {
@@ -184,11 +337,12 @@ function saveConfirm() {
     protein: num('#confirm-protein'),
     fiber: num('#confirm-fiber'),
     src: confirmCtx?.src,
+    meal: sheetTarget.meal || undefined,
   };
-  store.addFood(store.todayKey(), item);
+  store.addFood(sheetTarget.date || store.todayKey(), item);
   toast(`${namn} loggad ✓`);
   closeSheet();
-  renderFoodCard();
+  renderFoodDay();
   onLogged();
 }
 
@@ -354,7 +508,7 @@ async function handleBarcode(code) {
 /* ---------- Foto & Snabbt (AI) ---------- */
 const AI_ERRORS = {
   saknar_nyckel: 'AI-analysen är inte aktiverad ännu — en Anthropic API-nyckel ' +
-    'behöver läggas in som hemlighet i Supabase (se instruktion under Mer).',
+    'behöver läggas in som hemlighet i Supabase (se README).',
   nyckel_ogiltig: 'API-nyckeln verkar ogiltig — kontrollera den i Supabase.',
   for_manga_anrop: 'För många anrop just nu — vänta en stund och försök igen.',
 };
@@ -466,12 +620,8 @@ async function saveMyFood() {
   }
 }
 
-/* ---------- Init ---------- */
-export function initFood(opts) {
-  toast = opts.toast;
-  onLogged = opts.onChange || (() => {});
-
-  $('#btn-food-add').addEventListener('click', openSheet);
+/* ---------- Arkets händelser ---------- */
+function bindSheet() {
   $('#food-sheet-close').addEventListener('click', closeSheet);
   $$('#food-tabs button').forEach(b =>
     b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -495,10 +645,9 @@ export function initFood(opts) {
     try {
       status.textContent = 'Förbereder bilden …';
       const base64 = await fileToResizedBase64(file);
-      photoData = { image: base64, mediaType: 'image/jpeg' };
       $('#photo-preview').src = `data:image/jpeg;base64,${base64}`;
       $('#photo-preview').hidden = false;
-      await analyzeAndConfirm(photoData, status, 'ai');
+      await analyzeAndConfirm({ image: base64, mediaType: 'image/jpeg' }, status, 'ai');
     } catch {
       status.textContent = 'Kunde inte läsa bilden.';
     }

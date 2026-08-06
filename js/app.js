@@ -3,7 +3,7 @@ import * as cloud from './cloud.js';
 import * as sync from './sync.js';
 import { renderChart } from './charts.js';
 import { parseLogURL } from './import.js';
-import { initFood, renderFoodCard } from './food.js';
+import { bindFoodDay, renderFoodDay } from './food.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -137,9 +137,6 @@ function renderToday() {
   const rules = store.getGoals().rules || '';
   $('#today-rules-box').hidden = !rules.trim();
   if (rules.trim()) renderRulesInto($('#today-rules'), rules);
-
-  // Matloggen
-  renderFoodCard();
 }
 
 function bindTodayForm() {
@@ -311,15 +308,18 @@ function renderTrends() {
   }
 }
 
-/* ---------- Måltider (delad veckoplan) ---------- */
-const MEAL_TYPES = [
-  { key: 'frukost', label: 'Frukost', icon: '🌅' },
-  { key: 'mellanmal_fm', label: 'Mellanmål', icon: '🍎' },
-  { key: 'lunch', label: 'Lunch', icon: '🥪' },
-  { key: 'mellanmal_em', label: 'Mellanmål', icon: '🥜' },
-  { key: 'middag', label: 'Middag', icon: '🍲' },
-  { key: 'mellanmal_kvall', label: 'Kvällsmål', icon: '🌙' },
-];
+/* ---------- Måltider: dagvy (matlogg) + veckovy (delad plan) ---------- */
+const MEAL_TYPES = store.MEAL_TYPES;
+let mealsMode = 'day';
+
+function renderMeals() {
+  $('#meals-day').hidden = mealsMode !== 'day';
+  $('#meals-week-wrap').hidden = mealsMode !== 'week';
+  $$('#meals-mode button').forEach(b =>
+    b.classList.toggle('is-active', b.dataset.mode === mealsMode));
+  if (mealsMode === 'day') renderFoodDay();
+  else renderMealsWeek();
+}
 
 /* Textfält som växer på höjden med innehållet */
 function autoGrow(ta) {
@@ -345,7 +345,7 @@ function isoWeek(d) {
   return 1 + Math.round((t - mondayOf(jan4)) / (7 * 86400000));
 }
 
-async function renderMeals() {
+async function renderMealsWeek() {
   const loggedIn = cloud.cloudAvailable() && cloud.currentUser();
   $('#meals-login-hint').hidden = !!loggedIn;
   const container = $('#meals-week');
@@ -439,12 +439,16 @@ async function renderMeals() {
 function bindMeals() {
   $('#week-prev').addEventListener('click', () => {
     weekStart.setDate(weekStart.getDate() - 7);
-    renderMeals();
+    renderMealsWeek();
   });
   $('#week-next').addEventListener('click', () => {
     weekStart.setDate(weekStart.getDate() + 7);
-    renderMeals();
+    renderMealsWeek();
   });
+  $$('#meals-mode button').forEach(b => b.addEventListener('click', () => {
+    mealsMode = b.dataset.mode;
+    renderMeals();
+  }));
 }
 
 /* ---------- Kalender (måluppfyllnad per dag) ---------- */
@@ -660,6 +664,47 @@ function renderSettings() {
   $('#theme-select').value = g.theme || 'auto';
 }
 
+/* Näringsmålsförslag för viktnedgång med bibehållen muskelmassa:
+   protein 1,8 g/kg kroppsvikt; kaloriunderskott från viktplanen
+   (målvikt + måldatum) om den finns, annars ca 20 % under uppskattat
+   energibehov (kroppsvikt × 31 kcal ≈ måttligt aktiv). */
+function suggestTargets(profile) {
+  const g = store.getGoals();
+  const lw = store.latestWeight();
+  if (!lw) { toast('Logga din vikt först, så kan jag räkna på dina siffror.', true); return; }
+  const w = lw.weight;
+  const tdee = Math.round(w * 31);
+  let deficit = Math.round(tdee * 0.2);
+  let basis = 'ca 20 % underskott';
+  const day = k => Math.round(new Date(k + 'T12:00:00').getTime() / 86400000);
+  if (typeof g.weightTarget === 'number' && g.weightTargetDate && g.weightTarget < w) {
+    const days = day(g.weightTargetDate) - day(store.todayKey());
+    if (days > 0) {
+      // 1 kg fett ≈ 7 700 kcal; takta underskottet efter måldatumet (max 30 %)
+      deficit = Math.min(Math.round((w - g.weightTarget) * 7700 / days),
+        Math.round(tdee * 0.3));
+      basis = 'takten i din viktplan';
+    }
+  }
+  const kcal = Math.max(1200, Math.round((tdee - deficit) / 10) * 10);
+  const protein = Math.round(w * 1.8 / 5) * 5;
+  let fett, kolh;
+  if (profile === 'keto') {
+    kolh = 25;
+    fett = Math.max(0, Math.round((kcal - protein * 4 - kolh * 4) / 9 / 5) * 5);
+  } else {
+    fett = Math.round(kcal * 0.30 / 9 / 5) * 5;
+    kolh = Math.max(0, Math.round((kcal - protein * 4 - fett * 9) / 4 / 5) * 5);
+  }
+  store.setGoals({
+    kcalTarget: kcal, proteinTarget: protein,
+    fettTarget: fett, kolhTarget: kolh, fiberTarget: 30,
+  });
+  renderSettings();
+  toast(`Förslag satt: ${kcal.toLocaleString('sv-SE')} kcal (${basis}), ` +
+    `protein ${protein} g (1,8 g/kg). Justera fritt!`);
+}
+
 function bindSettings() {
   const num = el => { const v = parseFloat(el.value.replace(',', '.')); return isFinite(v) ? v : null; };
   $('#goal-weight').addEventListener('change', ev => store.setGoals({ weightTarget: num(ev.target) }));
@@ -686,6 +731,8 @@ function bindSettings() {
   $('#goal-kolh').addEventListener('change', ev => store.setGoals({ kolhTarget: num(ev.target) }));
   $('#goal-protein').addEventListener('change', ev => store.setGoals({ proteinTarget: num(ev.target) }));
   $('#goal-fiber').addEventListener('change', ev => store.setGoals({ fiberTarget: num(ev.target) }));
+  $('#btn-macro-keto').addEventListener('click', () => suggestTargets('keto'));
+  $('#btn-macro-mixed').addEventListener('click', () => suggestTargets('mixed'));
   $('#rules-input').addEventListener('change', ev => {
     store.setGoals({ rules: ev.target.value });
     toast('Regler sparade ✓');
@@ -797,7 +844,7 @@ function handleLogURL() {
 function init() {
   applyTheme();
   handleLogURL();
-  initFood({ toast, onChange: () => { if (currentView === 'today') renderToday(); } });
+  bindFoodDay({ toast, onChange: () => { if (currentView === 'today') renderToday(); } });
   bindTodayForm();
   bindSettings();
   bindAccount();
