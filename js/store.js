@@ -30,6 +30,17 @@ export const DEFAULT_GOALS = {
   theme: 'auto',        // auto | light | dark
 };
 
+/* Måltidsplatserna — används av veckoplanen, matloggen och inställningarna.
+   weight styr hur dagens kalorimål fördelas som budget per plats. */
+export const MEAL_TYPES = [
+  { key: 'frukost', label: 'Frukost', icon: '🌅', weight: 3 },
+  { key: 'mellanmal_fm', label: 'Mellanmål', icon: '🍎', weight: 1 },
+  { key: 'lunch', label: 'Lunch', icon: '🥪', weight: 4 },
+  { key: 'mellanmal_em', label: 'Mellanmål', icon: '🥜', weight: 1 },
+  { key: 'middag', label: 'Middag', icon: '🍲', weight: 4 },
+  { key: 'mellanmal_kvall', label: 'Kvällsmål', icon: '🌙', weight: 1 },
+];
+
 /* En dagspost:
    { weight, firstMeal:"HH:MM", lastMeal:"HH:MM", fastingHours,
      exerciseMin, exerciseType, sleepHours, steps, dietOk, notes,

@@ -78,17 +78,6 @@
       <div id="today-rules"></div>
     </details>
 
-    <h2>Mat idag</h2>
-    <div class="card food-card">
-      <div class="food-kcal-row">
-        <strong id="food-kcal">0</strong><span id="food-kcal-target"> kcal</span>
-      </div>
-      <div id="food-rings" class="food-rings"></div>
-      <ul id="food-log-list" class="food-log-list"></ul>
-      <p id="food-empty" class="hint">Inget loggat ännu idag.</p>
-      <button id="btn-food-add" class="btn">+ Lägg till mat</button>
-    </div>
-
     <h2>Logga</h2>
     <div class="card form-card">
       <label>⚖️ Vikt (kg)
@@ -163,16 +152,62 @@
 
   <!-- ===== MÅLTIDER ===== -->
   <section class="view" data-view="meals" hidden>
-    <div class="week-nav">
-      <button id="week-prev" class="week-btn" aria-label="Föregående vecka">‹</button>
-      <strong id="week-label"></strong>
-      <button id="week-next" class="week-btn" aria-label="Nästa vecka">›</button>
+    <div id="meals-mode" class="range-row" role="group" aria-label="Läge">
+      <button data-mode="day" class="is-active">Logga dag</button>
+      <button data-mode="week">Veckoplan</button>
     </div>
-    <p id="meals-login-hint" class="hint" hidden>
-      Måltidsplanen delas mellan era konton — logga in under <strong>Mer</strong>
-      för att använda den.</p>
-    <p id="meals-status" class="hint" role="status"></p>
-    <div id="meals-week"></div>
+
+    <!-- Dagvy: matlogg per måltid -->
+    <div id="meals-day">
+      <div class="week-nav">
+        <button id="day-prev" class="week-btn" aria-label="Föregående dag">‹</button>
+        <strong id="day-label"></strong>
+        <button id="day-next" class="week-btn" aria-label="Nästa dag">›</button>
+      </div>
+
+      <div class="card gauge-card">
+        <svg viewBox="0 0 200 116" class="kcal-gauge" aria-hidden="true">
+          <path id="gauge-track" d="" class="gauge-track"/>
+          <path id="gauge-fill" d="" class="gauge-fill"/>
+        </svg>
+        <div class="gauge-center">
+          <strong id="gauge-big">0</strong>
+          <span id="gauge-sub">kcal idag</span>
+        </div>
+        <div class="gauge-row">
+          <span>Ätit<br><b id="gauge-eaten">0</b></span>
+          <span>Mål<br><b id="gauge-goal">–</b></span>
+        </div>
+        <p id="gauge-hint" class="hint" hidden>Sätt ett kalorimål under
+          <strong>Mer → Näringsmål per dag</strong> så visas hur mycket du har kvar.</p>
+      </div>
+
+      <div id="macro-cards" class="macro-cards"></div>
+
+      <div id="meal-slots"></div>
+
+      <div class="card fasting-card" id="fasting-card" hidden>
+        <div class="fasting-head">
+          <strong id="fasting-title">Du fastar!</strong>
+          <span id="fasting-elapsed" class="fasting-time"></span>
+        </div>
+        <p id="fasting-sub" class="hint"></p>
+      </div>
+    </div>
+
+    <!-- Veckovy: delad måltidsplan -->
+    <div id="meals-week-wrap" hidden>
+      <div class="week-nav">
+        <button id="week-prev" class="week-btn" aria-label="Föregående vecka">‹</button>
+        <strong id="week-label"></strong>
+        <button id="week-next" class="week-btn" aria-label="Nästa vecka">›</button>
+      </div>
+      <p id="meals-login-hint" class="hint" hidden>
+        Måltidsplanen delas mellan era konton — logga in under <strong>Mer</strong>
+        för att använda den.</p>
+      <p id="meals-status" class="hint" role="status"></p>
+      <div id="meals-week"></div>
+    </div>
   </section>
 
   <!-- ===== HISTORIK ===== -->
@@ -285,6 +320,14 @@
       <label>Fiber (g)
         <input id="goal-fiber" type="number" inputmode="numeric" min="0" placeholder="ej satt">
       </label>
+      <p class="hint">Låt mig räkna fram ett förslag för <strong>viktnedgång med
+        bibehållen muskelmassa</strong>: högt protein (1,8 g per kg kroppsvikt)
+        och ett kaloriunderskott hämtat från din viktplan (målvikt + måldatum
+        under Mål), annars ca 20 %. Justera gärna efteråt.</p>
+      <div class="row">
+        <button id="btn-macro-keto" class="btn btn-secondary">🥑 Förslag: keto</button>
+        <button id="btn-macro-mixed" class="btn btn-secondary">🥗 Förslag: blandkost</button>
+      </div>
     </div>
 
     <h2>Måltider i veckoplanen</h2>
