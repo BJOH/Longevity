@@ -37,10 +37,13 @@ const TOOL = {
 
 const SYSTEM = `Du är en noggrann nutritionist. Uppskatta näringsinnehållet i det som
 beskrivs eller syns på bilden. Bedöm portionsstorleken utifrån visuella ledtrådar
-(tallrikens storlek, bestick, förpackningar). Räkna med dolt fett (matlagningsolja,
-smör, såser). Ange totalvärden för HELA portionen, inte per 100 g. Svara på svenska.
-Om bilden inte innehåller mat: sätt namn till "Ingen mat hittad", alla värden till 0
-och sakerhet till "låg".`;
+(tallrikens storlek, bestick, förpackningar); i text utan mängdangivelser: utgå
+från svenska standardportioner (t.ex. 1 ägg 60 g, 1 skiva bröd 35 g, 1 msk olja
+10 g). Räkna med dolt fett (matlagningsolja, smör, såser). Var konsekvent —
+samma beskrivning ska alltid ge samma uppskattning; gissa mittenvärdet, inte
+högt eller lågt. Ange totalvärden för HELA portionen, inte per 100 g. Svara på
+svenska. Om bilden inte innehåller mat: sätt namn till "Ingen mat hittad",
+alla värden till 0 och sakerhet till "låg".`;
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
@@ -81,6 +84,8 @@ Deno.serve(async (req: Request) => {
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
+      // temperature 0: samma indata ger samma uppskattning (ingen slumpvariation)
+      temperature: 0,
       system: SYSTEM,
       messages: [{ role: 'user', content }],
       tools: [TOOL],
