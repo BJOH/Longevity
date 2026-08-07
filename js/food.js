@@ -47,12 +47,12 @@ function slotBudgets(visible, kcalTarget) {
 }
 
 function gaugeArc(pct) {
-  // Halvcirkelbåge 200×116: från (16,104) över toppen till (184,104)
+  // Halvcirkelbåge 200×116: från (16,104) över toppen till (184,104).
+  // Bågen är alltid ≤ 180°, så large-arc-flaggan ska alltid vara 0.
   const a = Math.PI * (1 - Math.max(0, Math.min(1, pct)));
   const x = 100 + 84 * Math.cos(a);
   const y = 104 - 84 * Math.sin(a);
-  const large = pct > 0.5 ? 1 : 0;
-  return `M 16 104 A 84 84 0 ${large} 1 ${x.toFixed(1)} ${y.toFixed(1)}`;
+  return `M 16 104 A 84 84 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}`;
 }
 
 export function renderFoodDay() {
