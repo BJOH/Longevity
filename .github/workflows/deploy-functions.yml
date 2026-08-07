@@ -1,0 +1,23 @@
+# Deployar Supabase Edge Functions automatiskt när funktionskoden ändras
+# på main. Kräver repo-hemligheten SUPABASE_ACCESS_TOKEN (personlig
+# åtkomsttoken från supabase.com/dashboard/account/tokens).
+name: Deploy Supabase functions
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/functions/**']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploya analyze-food
+        run: supabase functions deploy analyze-food --project-ref pndwanquyfxuphoymtyg
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
