@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
   // Sonnet 5 först (klart bättre bildidentifiering), Haiku som reserv så
   // att funktionen aldrig blir obrukbar om ett modellanrop avvisas.
   const MODELS = ['claude-sonnet-5', 'claude-haiku-4-5'];
-  let lastErr: { status?: number; message?: string } = {};
+  const fel: string[] = [];
   for (const model of MODELS) {
     try {
       const msg = await client.messages.create({
@@ -97,15 +97,19 @@ Deno.serve(async (req: Request) => {
       });
       const block = msg.content.find((b) => b.type === 'tool_use');
       if (!block || block.type !== 'tool_use') return json({ error: 'inget_svar' }, 502);
-      return json(block.input);
+      // Diagnostik i svaret: vilken modell som svarade + ev. tidigare fel
+      const out = block.input as Record<string, unknown>;
+      const extra = [`modell: ${model}`, ...fel];
+      out.beskrivning = `${out.beskrivning || ''} [${extra.join(' · ')}]`;
+      return json(out);
     } catch (err) {
       const e = err as { status?: number; message?: string };
-      lastErr = e;
+      fel.push(`${model} avvisades (${e.status}): ${(e.message || '').slice(0, 300)}`);
       console.error(`analyze-food [${model}]:`, e.status, e.message);
       if (e.status === 401) return json({ error: 'nyckel_ogiltig' }, 200);
       if (e.status === 429) return json({ error: 'for_manga_anrop' }, 200);
       // 400/404 = modellen/parametern avvisades — prova nästa modell
     }
   }
-  return json({ error: 'analys_misslyckades', detalj: lastErr.message }, 502);
+  return json({ error: 'analys_misslyckades', detalj: fel.join(' · ') }, 502);
 });
