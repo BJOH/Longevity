@@ -42,8 +42,10 @@ från svenska standardportioner (t.ex. 1 ägg 60 g, 1 skiva bröd 35 g, 1 msk ol
 10 g). Räkna med dolt fett (matlagningsolja, smör, såser). Var konsekvent —
 samma beskrivning ska alltid ge samma uppskattning; gissa mittenvärdet, inte
 högt eller lågt. Ange totalvärden för HELA portionen, inte per 100 g. Svara på
-svenska. Om bilden inte innehåller mat: sätt namn till "Ingen mat hittad",
-alla värden till 0 och sakerhet till "låg".`;
+svenska. Fältet "namn" är obligatoriskt: ett kort rättnamn på 2–5 ord (t.ex.
+"Pastasallad med kyckling") — detaljerna hör hemma i "beskrivning". Om bilden
+inte innehåller mat: sätt namn till "Ingen mat hittad", alla värden till 0
+och sakerhet till "låg".`;
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
