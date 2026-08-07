@@ -88,8 +88,9 @@ Deno.serve(async (req: Request) => {
       const msg = await client.messages.create({
         model,
         max_tokens: 1024,
-        // temperature 0: samma indata ger samma uppskattning
-        temperature: 0,
+        // Claude 5-modeller accepterar inte temperature (400: deprecated);
+        // Haiku 4.5 gör det — där ger 0 deterministiska svar.
+        ...(model === 'claude-haiku-4-5' ? { temperature: 0 } : {}),
         system: SYSTEM,
         messages: [{ role: 'user', content }],
         tools: [TOOL],
@@ -97,11 +98,7 @@ Deno.serve(async (req: Request) => {
       });
       const block = msg.content.find((b) => b.type === 'tool_use');
       if (!block || block.type !== 'tool_use') return json({ error: 'inget_svar' }, 502);
-      // Diagnostik i svaret: vilken modell som svarade + ev. tidigare fel
-      const out = block.input as Record<string, unknown>;
-      const extra = [`modell: ${model}`, ...fel];
-      out.beskrivning = `${out.beskrivning || ''} [${extra.join(' · ')}]`;
-      return json(out);
+      return json(block.input);
     } catch (err) {
       const e = err as { status?: number; message?: string };
       fel.push(`${model} avvisades (${e.status}): ${(e.message || '').slice(0, 300)}`);
