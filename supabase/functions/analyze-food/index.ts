@@ -78,28 +78,34 @@ Deno.serve(async (req: Request) => {
       : 'Uppskatta näringsinnehållet i maten på bilden.',
   });
 
-  try {
-    const client = new Anthropic({ apiKey });
-    // Sonnet 5: klart bättre bildidentifiering än Haiku (kyckling vs tonfisk,
-    // persika vs äpple) för ~8–10 öre per analys.
-    const msg = await client.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 1024,
-      // temperature 0: samma indata ger samma uppskattning (ingen slumpvariation)
-      temperature: 0,
-      system: SYSTEM,
-      messages: [{ role: 'user', content }],
-      tools: [TOOL],
-      tool_choice: { type: 'tool', name: 'rapportera_analys' },
-    });
-    const block = msg.content.find((b) => b.type === 'tool_use');
-    if (!block || block.type !== 'tool_use') return json({ error: 'inget_svar' }, 502);
-    return json(block.input);
-  } catch (err) {
-    const e = err as { status?: number; message?: string };
-    if (e.status === 401) return json({ error: 'nyckel_ogiltig' }, 200);
-    if (e.status === 429) return json({ error: 'for_manga_anrop' }, 200);
-    console.error('analyze-food:', e.message);
-    return json({ error: 'analys_misslyckades', detalj: e.message }, 502);
+  const client = new Anthropic({ apiKey });
+  // Sonnet 5 först (klart bättre bildidentifiering), Haiku som reserv så
+  // att funktionen aldrig blir obrukbar om ett modellanrop avvisas.
+  const MODELS = ['claude-sonnet-5', 'claude-haiku-4-5'];
+  let lastErr: { status?: number; message?: string } = {};
+  for (const model of MODELS) {
+    try {
+      const msg = await client.messages.create({
+        model,
+        max_tokens: 1024,
+        // temperature 0: samma indata ger samma uppskattning
+        temperature: 0,
+        system: SYSTEM,
+        messages: [{ role: 'user', content }],
+        tools: [TOOL],
+        tool_choice: { type: 'tool', name: 'rapportera_analys' },
+      });
+      const block = msg.content.find((b) => b.type === 'tool_use');
+      if (!block || block.type !== 'tool_use') return json({ error: 'inget_svar' }, 502);
+      return json(block.input);
+    } catch (err) {
+      const e = err as { status?: number; message?: string };
+      lastErr = e;
+      console.error(`analyze-food [${model}]:`, e.status, e.message);
+      if (e.status === 401) return json({ error: 'nyckel_ogiltig' }, 200);
+      if (e.status === 429) return json({ error: 'for_manga_anrop' }, 200);
+      // 400/404 = modellen/parametern avvisades — prova nästa modell
+    }
   }
+  return json({ error: 'analys_misslyckades', detalj: lastErr.message }, 502);
 });
