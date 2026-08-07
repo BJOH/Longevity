@@ -582,8 +582,13 @@ async function analyzeAndConfirm(payload, statusEl, src) {
   const noteBits = [];
   if (res.beskrivning) noteBits.push(res.beskrivning);
   if (res.sakerhet) noteBits.push(`Säkerhet: ${res.sakerhet}. Justera gärna värdena.`);
+  // Reserv: härled ett namn ur beskrivningens första led om fältet saknas
+  let namn = (res.namn || '').trim();
+  if (!namn && res.beskrivning) {
+    namn = res.beskrivning.split(/[,.(—–:]/)[0].trim().slice(0, 60);
+  }
   showConfirm({
-    namn: res.namn, gram: res.gram,
+    namn, gram: res.gram,
     values: { kcal: res.kcal, fett: res.fett, kolh: res.kolh, protein: res.protein, fiber: res.fiber },
     src, note: noteBits.join(' — '),
   });
