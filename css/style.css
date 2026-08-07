@@ -902,8 +902,9 @@ h2 {
 .food-confirm input:focus { outline: 2px solid var(--accent); }
 
 /* ---------- Måltider: dagvy ---------- */
-.gauge-card { position: relative; text-align: center; padding-bottom: 12px; }
-.kcal-gauge { width: min(240px, 70%); display: block; margin: 0 auto; }
+.gauge-card { text-align: center; padding-bottom: 12px; }
+.gauge-wrap { position: relative; width: min(240px, 70%); margin: 0 auto; }
+.kcal-gauge { width: 100%; display: block; }
 .gauge-track, .gauge-fill {
   fill: none;
   stroke-width: 13;
@@ -913,15 +914,16 @@ h2 {
 .gauge-fill { stroke: var(--accent); }
 .gauge-fill.is-over { stroke: var(--danger); }
 .gauge-center {
+  /* Förankrad i mätarens baslinje så siffran alltid sitter i skålen */
   position: absolute;
-  top: 46px;
   left: 0;
   right: 0;
+  bottom: 2px;
   display: flex;
   flex-direction: column;
   pointer-events: none;
 }
-.gauge-center strong { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.gauge-center strong { font-size: 33px; font-weight: 800; letter-spacing: -0.02em; }
 .gauge-center span { color: var(--muted); font-size: 13px; font-weight: 600; }
 .gauge-row {
   display: flex;
