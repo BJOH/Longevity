@@ -72,12 +72,33 @@ function renderRulesInto(container, text) {
   }
 }
 
-/* ---------- Idag ---------- */
+/* ---------- Idag ----------
+   Vyn kan bläddras bakåt för att logga/rätta tidigare dagar. */
+let todayViewKey = store.todayKey();
+
+function shiftTodayView(days) {
+  const d = new Date(todayViewKey + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  const next = store.todayKey(d);
+  if (next > store.todayKey()) return;
+  todayViewKey = next;
+  renderToday();
+}
+
 function renderToday() {
-  const key = store.todayKey();
+  const todayK = store.todayKey();
+  if (todayViewKey > todayK) todayViewKey = todayK;
+  const key = todayViewKey;
+  const isToday = key === todayK;
   const e = store.getEntry(key);
   const goals = store.goalStatus(key);
   const done = goals.filter(g => g.done).length;
+
+  $('#today-day-label').textContent = isToday ? 'Idag'
+    : new Date(key + 'T12:00:00').toLocaleDateString('sv-SE', {
+        weekday: 'long', day: 'numeric', month: 'short',
+      });
+  $('#today-next').disabled = isToday;
 
   $('#today-date').textContent = new Date().toLocaleDateString('sv-SE', {
     weekday: 'long', day: 'numeric', month: 'long',
@@ -91,9 +112,12 @@ function renderToday() {
   ring.style.stroke = goalColor(pct);
   $('#progress-count').textContent = `${done}/${goals.length}`;
   const streak = store.streak();
-  $('#streak').textContent = streak > 0
-    ? `🔥 ${streak} ${streak === 1 ? 'dag' : 'dagar'} i rad — alla mål`
-    : 'Bocka av dagens mål nedan';
+  $('#streak').textContent = !isToday
+    ? (done === goals.length ? 'Alla mål klara den här dagen ✓'
+       : `${done} av ${goals.length} mål avklarade den här dagen`)
+    : streak > 0
+      ? `🔥 ${streak} ${streak === 1 ? 'dag' : 'dagar'} i rad — alla mål`
+      : 'Bocka av dagens mål nedan';
 
   // Checklista
   const list = $('#goal-list');
@@ -140,8 +164,11 @@ function renderToday() {
 }
 
 function bindTodayForm() {
-  const key = () => store.todayKey();
+  const key = () => todayViewKey;
   const num = el => { const v = parseFloat(el.value.replace(',', '.')); return isFinite(v) ? v : ''; };
+
+  $('#today-prev').addEventListener('click', () => shiftTodayView(-1));
+  $('#today-next').addEventListener('click', () => shiftTodayView(1));
 
   const save = patch => { store.updateEntry(key(), patch); renderToday(); };
 
