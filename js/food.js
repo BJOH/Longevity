@@ -74,11 +74,10 @@ export function renderFoodDay() {
   const pct = hasTarget ? totals.kcal / target : 0;
   $('#gauge-fill').setAttribute('d', totals.kcal > 0 && hasTarget ? gaugeArc(pct) : '');
   $('#gauge-fill').classList.toggle('is-over', hasTarget && pct > 1);
-  $('#gauge-big').textContent = hasTarget
-    ? svNum(Math.max(0, Math.round(target - totals.kcal)))
-    : svNum(totals.kcal);
+  const diff = hasTarget ? Math.round(target - totals.kcal) : 0;
+  $('#gauge-big').textContent = hasTarget ? svNum(Math.abs(diff)) : svNum(totals.kcal);
   $('#gauge-sub').textContent = hasTarget
-    ? (totals.kcal > target ? 'kcal över målet' : 'kcal kvar')
+    ? (diff < 0 ? 'kcal över målet' : 'kcal kvar')
     : 'kcal loggat';
   $('#gauge-eaten').textContent = svNum(totals.kcal);
   $('#gauge-goal').textContent = hasTarget ? svNum(target) : '–';

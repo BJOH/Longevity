@@ -1027,3 +1027,56 @@ h2 {
   cursor: pointer;
 }
 .zoom-row button.is-active { background: var(--accent-soft); color: var(--accent); }
+
+/* Minimätare i veckovyns dagkort */
+.mini-track { margin: 2px 0 10px; }
+.mini-kcal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.mini-kcal > .mini-bar { flex: 1; }
+.mini-kcal > span:last-child {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.mini-bar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--field);
+  overflow: hidden;
+}
+.mini-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ring-c, var(--accent));
+}
+.mini-bar-fill.is-over { background: var(--danger); }
+.mini-macros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.mini-macro { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mini-macro b { font-size: 10.5px; font-weight: 700; color: var(--muted); }
+.mini-macro .mini-bar { height: 4px; }
+.mini-macro i {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Loggad mat visad i planfältet (platshållare, sparas inte i planen) */
+.meal-row textarea.has-logged::placeholder {
+  color: var(--good);
+  opacity: 1;
+}
