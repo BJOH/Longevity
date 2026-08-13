@@ -431,15 +431,8 @@ async function renderMealsWeek() {
     head.append(name, date);
     card.appendChild(head);
 
-    // Dagens loggade energi/näring (från matloggen under "Logga dag")
-    if (logged.length) {
-      const t = store.foodTotals(dateKey);
-      const sum = document.createElement('p');
-      sum.className = 'meal-day-total';
-      sum.textContent = `Loggat: ${t.kcal.toLocaleString('sv-SE')} kcal · ` +
-        `P ${Math.round(t.protein)} g · K ${Math.round(t.kolh)} g · F ${Math.round(t.fett)} g`;
-      card.appendChild(sum);
-    }
+    // Dagens loggade energi/näring som minimätare (kcal + makrostaplar)
+    if (logged.length) card.appendChild(miniTracker(dateKey));
 
     for (const mt of visibleTypes) {
       const shared = prefs[mt.key]?.shared !== false;
@@ -469,20 +462,78 @@ async function renderMealsWeek() {
       row.append(lbl, input, by);
       card.appendChild(row);
 
-      // Det jag faktiskt loggade på den här måltiden (min egen matlogg)
+      // Det jag faktiskt loggade på den här måltiden (min egen matlogg).
+      // Tomt planfält: visas i själva rutan (som platshållare — skriver man
+      // en plan tar den över, och inget sparas i den delade planen av loggen).
       const slotLogged = logged.filter(f => f.meal === mt.key);
       if (slotLogged.length) {
-        const kcal = slotLogged.reduce((s, f) => s + (f.kcal || 0), 0);
-        const line = document.createElement('p');
-        line.className = 'meal-logged';
-        line.textContent = `✓ ${Math.round(kcal).toLocaleString('sv-SE')} kcal · ` +
+        const kcal = Math.round(slotLogged.reduce((s, f) => s + (f.kcal || 0), 0));
+        const line = `✓ ${kcal.toLocaleString('sv-SE')} kcal · ` +
           slotLogged.map(f => f.namn).join(', ');
-        card.appendChild(line);
+        if (meal?.title) {
+          const p = document.createElement('p');
+          p.className = 'meal-logged';
+          p.textContent = line;
+          card.appendChild(p);
+        } else {
+          input.placeholder = line;
+          input.classList.add('has-logged');
+        }
       }
       requestAnimationFrame(() => autoGrow(input));
     }
     container.appendChild(card);
   }
+}
+
+/* Kompakt kalori/makro-mätare för ett dagkort i veckovyn. */
+function miniTracker(dateKey) {
+  const t = store.foodTotals(dateKey);
+  const g = store.getGoals();
+  const sv = n => Math.round(n).toLocaleString('sv-SE');
+  const box = document.createElement('div');
+  box.className = 'mini-track';
+
+  const bar = (val, target, cls) => {
+    const wrap = document.createElement('span');
+    wrap.className = 'mini-bar';
+    const fill = document.createElement('span');
+    fill.className = `mini-bar-fill ${cls || ''}`;
+    const has = typeof target === 'number' && target > 0;
+    fill.style.width = `${(has ? Math.min(val / target, 1) * 100 : 0).toFixed(1)}%`;
+    if (has && val > target) fill.classList.add('is-over');
+    wrap.appendChild(fill);
+    return wrap;
+  };
+
+  const kcalRow = document.createElement('div');
+  kcalRow.className = 'mini-kcal';
+  const kcalTxt = document.createElement('span');
+  kcalTxt.textContent = typeof g.kcalTarget === 'number'
+    ? `${sv(t.kcal)} / ${sv(g.kcalTarget)} kcal` : `${sv(t.kcal)} kcal`;
+  kcalRow.append(bar(t.kcal, g.kcalTarget), kcalTxt);
+  box.appendChild(kcalRow);
+
+  const macros = document.createElement('div');
+  macros.className = 'mini-macros';
+  for (const m of [
+    { key: 'kolh', label: 'K', target: g.kolhTarget, cls: 'macro-kolh' },
+    { key: 'protein', label: 'P', target: g.proteinTarget, cls: 'macro-protein' },
+    { key: 'fett', label: 'F', target: g.fettTarget, cls: 'macro-fett' },
+    { key: 'fiber', label: 'Fi', target: g.fiberTarget, cls: 'macro-fiber' },
+  ]) {
+    const cell = document.createElement('span');
+    cell.className = 'mini-macro';
+    const lbl = document.createElement('b');
+    lbl.textContent = m.label;
+    const num = document.createElement('i');
+    num.textContent = typeof m.target === 'number'
+      ? `${sv(t[m.key])}/${sv(m.target)}` : sv(t[m.key]);
+    cell.append(lbl, bar(t[m.key], m.target, m.cls), num);
+    macros.appendChild(cell);
+  }
+  box.appendChild(macros);
+  return box;
 }
 
 function bindMeals() {
