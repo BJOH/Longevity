@@ -1080,3 +1080,18 @@ h2 {
   color: var(--good);
   opacity: 1;
 }
+
+/* Sjukdag i kalendern: grön fylld cirkel med liten röd plupp i mitten */
+.cal-dot.is-sick { position: relative; }
+.cal-dot.is-sick::after,
+.cal-legend-dot.is-sick::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+.cal-legend-dot.is-sick { position: relative; }

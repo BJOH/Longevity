@@ -1,0 +1,23 @@
+# Kör supabase/migrate.sql mot databasen via Supabase Management API.
+# Triggas manuellt (workflow_dispatch). SQL:en ska vara idempotent
+# (IF NOT EXISTS) så att omkörningar är ofarliga.
+name: DB migrate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kör supabase/migrate.sql
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          jq -Rs '{query: .}' supabase/migrate.sql > /tmp/payload.json
+          curl -sS --fail-with-body -X POST \
+            "https://api.supabase.com/v1/projects/pndwanquyfxuphoymtyg/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @/tmp/payload.json

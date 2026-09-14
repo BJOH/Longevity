@@ -71,6 +71,7 @@ function toRow(dateKey, e) {
     steps: e.steps ?? null,
     diet_ok: e.dietOk ?? null,
     notes: e.notes || null,
+    sick: e.sick === true ? true : null,
     food: Array.isArray(e.food) && e.food.length ? e.food : null,
     updated_at: new Date().toISOString(),
   };
@@ -88,6 +89,7 @@ function fromRow(r) {
     steps: r.steps ?? undefined,
     dietOk: r.diet_ok ?? undefined,
     notes: r.notes ?? undefined,
+    sick: r.sick === true ? true : undefined,
     food: Array.isArray(r.food) && r.food.length ? r.food : undefined,
   };
   for (const k of Object.keys(e)) if (e[k] === undefined) delete e[k];
