@@ -104,20 +104,24 @@ function renderToday() {
     weekday: 'long', day: 'numeric', month: 'long',
   });
 
-  // Progressring — färgen går från blå till grön med antalet avklarade mål
-  const pct = done / goals.length;
+  // Progressring — färgen går från blå till grön med antalet avklarade mål.
+  // Sjukdag: full grön ring, målen pausas.
+  const sick = e.sick === true;
+  const pct = sick ? 1 : done / goals.length;
   const ring = $('#progress-ring-fg');
   const C = 2 * Math.PI * 52;
   ring.setAttribute('stroke-dasharray', `${(C * pct).toFixed(1)} ${C.toFixed(1)}`);
   ring.style.stroke = goalColor(pct);
-  $('#progress-count').textContent = `${done}/${goals.length}`;
+  $('#progress-count').textContent = sick ? '🤒' : `${done}/${goals.length}`;
   const streak = store.streak();
-  $('#streak').textContent = !isToday
-    ? (done === goals.length ? 'Alla mål klara den här dagen ✓'
-       : `${done} av ${goals.length} mål avklarade den här dagen`)
-    : streak > 0
-      ? `🔥 ${streak} ${streak === 1 ? 'dag' : 'dagar'} i rad — alla mål`
-      : 'Bocka av dagens mål nedan';
+  $('#streak').textContent = sick
+    ? 'Sjukdag — streaken pausas, krya på dig!'
+    : !isToday
+      ? (done === goals.length ? 'Alla mål klara den här dagen ✓'
+         : `${done} av ${goals.length} mål avklarade den här dagen`)
+      : streak > 0
+        ? `🔥 ${streak} ${streak === 1 ? 'dag' : 'dagar'} i rad — alla mål`
+        : 'Bocka av dagens mål nedan';
 
   // Checklista
   const list = $('#goal-list');
@@ -150,6 +154,7 @@ function renderToday() {
   $('#in-sleep').value = sv(e.sleepHours);
   $('#in-steps').value = e.steps ?? '';
   $('#in-diet').checked = e.dietOk === true;
+  $('#in-sick').checked = e.sick === true;
   $('#in-notes').value = e.notes ?? '';
 
   const fast = store.fastingHoursFor(e);
@@ -180,6 +185,7 @@ function bindTodayForm() {
   $('#in-sleep').addEventListener('change', ev => save({ sleepHours: num(ev.target) }));
   $('#in-steps').addEventListener('change', ev => save({ steps: num(ev.target) }));
   $('#in-diet').addEventListener('change', ev => save({ dietOk: ev.target.checked ? true : '' }));
+  $('#in-sick').addEventListener('change', ev => save({ sick: ev.target.checked ? true : '' }));
   $('#in-notes').addEventListener('change', ev => save({ notes: ev.target.value.trim() }));
   $('#in-notes').addEventListener('input', ev => autoGrow(ev.target));
 }
@@ -580,8 +586,15 @@ function renderCalendar() {
     num.textContent = day;
     const dot = document.createElement('span');
     dot.className = 'cal-dot';
-    const frac = key <= todayK ? store.goalFraction(key) : null;
-    if (frac) {
+    const sickDay = key <= todayK && store.getEntry(key).sick === true;
+    const frac = key <= todayK && !sickDay ? store.goalFraction(key) : null;
+    if (sickDay) {
+      // Sjukdag: grön fylld cirkel med liten röd plupp — streaken pausas
+      dot.classList.add('is-full', 'is-sick');
+      dot.style.background = goalColor(1);
+      cell.addEventListener('click', () =>
+        toast(`${day} ${label.split(' ')[0]}: sjukdag 🤒 — räknas inte mot streaken`));
+    } else if (frac) {
       const pct = frac.done / frac.total;
       const col = goalColor(pct);
       if (frac.done === frac.total) {

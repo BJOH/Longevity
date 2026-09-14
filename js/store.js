@@ -43,9 +43,10 @@ export const MEAL_TYPES = [
 
 /* En dagspost:
    { weight, firstMeal:"HH:MM", lastMeal:"HH:MM", fastingHours,
-     exerciseMin, exerciseType, sleepHours, steps, dietOk, notes,
+     exerciseMin, exerciseType, sleepHours, steps, dietOk, notes, sick,
      food: [{id, namn, gram, kcal, fett, kolh, protein, fiber, src, meal}] }
-   food-värdena är totaler för portionen (inte per 100 g). */
+   food-värdena är totaler för portionen (inte per 100 g).
+   sick = sjukdag: dagen räknas inte mot målen och streaken pausas. */
 
 let state = load();
 
@@ -326,21 +327,23 @@ export function goalFraction(dateKey) {
   return { done: st.filter(s => s.done).length, total: st.length };
 }
 
-/* Antal dagar i rad (bakåt från idag) där alla mål är uppfyllda. */
+/* Antal dagar i rad (bakåt från idag) där alla mål är uppfyllda.
+   Sjukdagar hoppas över: de bryter inte streaken men räknas inte heller. */
 export function streak() {
   let n = 0;
   const d = new Date();
-  // Idag räknas bara om alla mål redan är klara
-  for (;;) {
-    const st = goalStatus(todayKey(d));
+  for (let i = 0; i < 4000; i++) {
+    const key = todayKey(d);
+    if (state.entries[key]?.sick) { d.setDate(d.getDate() - 1); continue; }
+    const st = goalStatus(key);
     const all = st.every(s => s.done);
     if (!all) {
-      if (n === 0 && todayKey(d) === todayKey()) { d.setDate(d.getDate() - 1); continue; }
+      // Idag räknas bara om alla mål redan är klara
+      if (n === 0 && key === todayKey()) { d.setDate(d.getDate() - 1); continue; }
       break;
     }
     n++;
     d.setDate(d.getDate() - 1);
-    if (n > 3650) break;
   }
   return n;
 }
