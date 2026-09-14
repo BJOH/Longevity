@@ -71,10 +71,7 @@ function toRow(dateKey, e) {
     steps: e.steps ?? null,
     diet_ok: e.dietOk ?? null,
     notes: e.notes || null,
-    // Skickas bara när satt: tills sick-kolumnen är på plats i databasen
-    // (migrationen väntar på att Supabase åtgärdar sin db-anslutning) ska
-    // vanliga poster inte studsa på en okänd kolumn.
-    ...(e.sick === true ? { sick: true } : {}),
+    sick: e.sick === true ? true : null,
     food: Array.isArray(e.food) && e.food.length ? e.food : null,
     updated_at: new Date().toISOString(),
   };
